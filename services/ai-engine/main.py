@@ -36,9 +36,9 @@ async def add_simulation_headers(request, call_next):
     response.headers["X-GlucoGuard-Disclaimer"] = "Simulation-Only"
     return response
 
-# Mount AI Intelligence Engine Routes under /api/v1/ai and /ai
+# Mount AI Intelligence Engine Routes (both versioned and root paths)
 app.include_router(ai_router, prefix="/api/v1/ai")
-app.include_router(ai_router, prefix="/ai")
+app.include_router(ai_router)
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
@@ -59,9 +59,10 @@ def root():
         "simulation_mode": True,
         "disclaimer": "Educational & Research Simulation Prototype Only. Not a Medical Device.",
         "health": "/health",
-        "predict": "/api/v1/ai/predict",
-        "anomaly": "/api/v1/ai/anomaly",
-        "modelsInfo": "/api/v1/ai/models/info"
+        "endpoints": {
+            "predict": "/api/v1/ai/predict",
+            "anomaly": "/api/v1/ai/anomaly"
+        }
     }
 
 if __name__ == "__main__":

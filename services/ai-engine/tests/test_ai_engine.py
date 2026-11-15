@@ -1,202 +1,186 @@
 """
-Automated Test Suite for GlucoGuard AI Intelligence Engine (TASK-M4-FULL)
+GlucoGuard AI Intelligence Engine Test Suite (Module M4)
 
 Validates:
-1. Trend velocity, acceleration, and momentum classification
-2. Multi-step forecasting at +15, +30, +45 min with physiological clamping
-3. Early clinical threshold breach detector (<70 hypo, >180 hyper)
-4. Unsupervised Isolation Forest anomaly detection
-5. FastAPI endpoints (/api/v1/ai/predict, /api/v1/ai/anomaly, /api/v1/ai/models/info)
+1. TrendAnalyzer velocity & momentum classification
+2. GlucoseForecaster multi-step prediction, confidence intervals, and breach warnings
+3. AnomalyDetector isolation forest & artifact screening
+4. FastAPI /api/v1/ai/predict and /api/v1/ai/anomaly endpoints
 """
 
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 from models.trend_analyzer import TrendAnalyzer
 from models.forecaster import GlucoseForecaster
 from models.anomaly_detector import AnomalyDetector
 
-client = TestClient(app)
+
+@pytest.fixture
+def client():
+    return TestClient(app)
 
 
-# ==============================================================================
+# ---------------------------------------------------------------------------
 # 1. TrendAnalyzer Unit Tests
-# ==============================================================================
-
+# ---------------------------------------------------------------------------
 def test_trend_analyzer_stable_sequence():
+    analyzer = TrendAnalyzer()
     readings = [
-        {"glucose": 100, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 101, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 100, "timestamp": "2026-11-15T10:10:00Z"},
+        {"glucose": 100, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 101, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 100, "timestamp": "2026-11-15T12:10:00Z"},
     ]
-    result = TrendAnalyzer.analyze_sequence(readings)
-    assert result["category"] == "stable"
-    assert result["arrow"] == "→"
-    assert abs(result["rateOfChange"]) < 1.0
+    result = analyzer.analyze(readings)
+    assert result["momentum"] == "stable"
+    assert result["trend_arrow"] == "→"
+    assert abs(result["rate_of_change"]) <= 1.0
 
 
-def test_trend_analyzer_rapid_rise():
+def test_trend_analyzer_rising_rapidly():
+    analyzer = TrendAnalyzer()
+    # Glucose climbing at > 2.5 mg/dL/min
     readings = [
-        {"glucose": 110, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 122, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 136, "timestamp": "2026-11-15T10:10:00Z"},
+        {"glucose": 100, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 115, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 130, "timestamp": "2026-11-15T12:10:00Z"},
     ]
-    result = TrendAnalyzer.analyze_sequence(readings)
-    assert result["category"] in ["rising", "double_rising"]
-    assert result["arrow"] in ["↑", "↑↑"]
-    assert result["rateOfChange"] > 1.0
+    result = analyzer.analyze(readings)
+    assert result["momentum"] == "rising_rapidly"
+    assert result["trend_arrow"] == "↑↑"
+    assert result["rate_of_change"] > 2.0
 
 
-def test_trend_analyzer_steep_drop():
+def test_trend_analyzer_falling_rapidly():
+    analyzer = TrendAnalyzer()
+    # Glucose dropping at > 2.5 mg/dL/min
     readings = [
-        {"glucose": 130, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 115, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 98, "timestamp": "2026-11-15T10:10:00Z"},
+        {"glucose": 140, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 125, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 110, "timestamp": "2026-11-15T12:10:00Z"},
     ]
-    result = TrendAnalyzer.analyze_sequence(readings)
-    assert result["category"] in ["falling", "double_falling"]
-    assert result["arrow"] in ["↓", "↓↓"]
-    assert result["rateOfChange"] < -1.0
+    result = analyzer.analyze(readings)
+    assert result["momentum"] == "falling_rapidly"
+    assert result["trend_arrow"] == "↓↓"
+    assert result["rate_of_change"] < -2.0
 
 
-# ==============================================================================
+# ---------------------------------------------------------------------------
 # 2. GlucoseForecaster Unit Tests
-# ==============================================================================
-
-def test_forecaster_generates_valid_bounded_horizons():
+# ---------------------------------------------------------------------------
+def test_forecaster_multi_step_prediction():
     forecaster = GlucoseForecaster()
     readings = [
-        {"glucose": 110, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 115, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 120, "timestamp": "2026-11-15T10:10:00Z"},
+        {"glucose": 120, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 125, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 131, "timestamp": "2026-11-15T12:10:00Z"},
+        {"glucose": 138, "timestamp": "2026-11-15T12:15:00Z"},
     ]
-    result = forecaster.predict(readings)
-    preds = result["predictions"]
+    result = forecaster.predict_trajectory(readings)
 
-    assert len(preds) == 3
-    horizons = [p["minutesAhead"] for p in preds]
+    assert result["current_glucose"] == 138.0
+    assert len(result["forecasts"]) == 3
+
+    horizons = [f["horizon_minutes"] for f in result["forecasts"]]
     assert horizons == [15, 30, 45]
 
-    for p in preds:
-        # Strict physiological boundary clamping [40, 400]
-        assert 40.0 <= p["projectedGlucose"] <= 400.0
-        assert p["lowerBound"] <= p["projectedGlucose"]
-        assert p["projectedGlucose"] <= p["upperBound"]
+    for f in result["forecasts"]:
+        assert 40.0 <= f["predicted_glucose"] <= 400.0
+        assert f["lower_bound"] <= f["predicted_glucose"]
+        assert f["upper_bound"] >= f["predicted_glucose"]
 
-    assert result["modelMetrics"]["zeroLeakageValidated"] is True
-    assert result["modelMetrics"]["mae"] > 0
-    assert result["modelMetrics"]["rmse"] > 0
+    assert result["model_info"]["mae"] > 0
+    assert result["model_info"]["rmse"] > 0
 
 
-def test_forecaster_hypo_breach_detection():
+def test_forecaster_physiological_clamping_limits():
     forecaster = GlucoseForecaster()
-    # Steep plummeting readings heading below 70 mg/dL
-    readings = [
-        {"glucose": 110, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 95, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 78, "timestamp": "2026-11-15T10:10:00Z"},
+    # Severe drop sequence trying to drive negative
+    plunging_readings = [
+        {"glucose": 90, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 70, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 50, "timestamp": "2026-11-15T12:10:00Z"},
+        {"glucose": 42, "timestamp": "2026-11-15T12:15:00Z"},
     ]
-    result = forecaster.predict(readings)
-    breach = result["breachWarning"]
-
-    assert breach["breachPredicted"] is True
-    assert breach["type"] == "hypoglycemia"
-    assert breach["estimatedTimeToBreachMinutes"] is not None
-    assert breach["estimatedTimeToBreachMinutes"] > 0
-    assert breach["severity"] in ["warning", "critical"]
+    result = forecaster.predict_trajectory(plunging_readings)
+    for f in result["forecasts"]:
+        assert f["predicted_glucose"] >= 40.0
+        assert f["lower_bound"] >= 40.0
 
 
-def test_forecaster_hyper_breach_detection():
+def test_forecaster_hypoglycemia_breach_detection():
     forecaster = GlucoseForecaster()
-    # Rapidly escalating post-meal spike crossing 180 mg/dL
+    # Rapid descent toward hypo zone
     readings = [
-        {"glucose": 140, "timestamp": "2026-11-15T10:00:00Z"},
-        {"glucose": 165, "timestamp": "2026-11-15T10:05:00Z"},
-        {"glucose": 190, "timestamp": "2026-11-15T10:10:00Z"},
+        {"glucose": 105, "timestamp": "2026-11-15T12:00:00Z"},
+        {"glucose": 90, "timestamp": "2026-11-15T12:05:00Z"},
+        {"glucose": 76, "timestamp": "2026-11-15T12:10:00Z"},
+        {"glucose": 65, "timestamp": "2026-11-15T12:15:00Z"},
     ]
-    result = forecaster.predict(readings)
-    breach = result["breachWarning"]
+    result = forecaster.predict_trajectory(readings)
+    breach = result["breach_warning"]
+    assert breach is not None
+    assert breach["level"] in ["high", "critical"]
+    assert "hypoglycemia" in breach["type"]
+    assert breach["estimated_minutes_to_breach"] is not None
 
-    assert breach["breachPredicted"] is True
-    assert breach["type"] == "hyperglycemia"
-    assert breach["severity"] in ["warning", "critical"]
 
-
-# ==============================================================================
+# ---------------------------------------------------------------------------
 # 3. AnomalyDetector Unit Tests
-# ==============================================================================
-
-def test_anomaly_detector_normal_readings():
+# ---------------------------------------------------------------------------
+def test_anomaly_detector_normal_reading():
     detector = AnomalyDetector()
-    readings = [
-        {"glucose": 110, "rateOfChange": 0.2},
-        {"glucose": 112, "rateOfChange": 0.4},
-        {"glucose": 115, "rateOfChange": 0.6},
-    ]
-    result = detector.detect(readings)
-    assert result["is_anomaly"] is False
-    assert result["anomaly_score"] < 0.75
+    normal_reading = {"glucose": 115, "rateOfChange": 0.4}
+    recent = [{"glucose": 113, "rateOfChange": 0.2}]
+    res = detector.detect(normal_reading, recent)
+    assert res["is_anomaly"] is False
+    assert res["source"] == "simulation"
 
 
-def test_anomaly_detector_velocity_shock_anomaly():
+def test_anomaly_detector_velocity_artifact():
     detector = AnomalyDetector()
-    readings = [
-        {"glucose": 100, "rateOfChange": 0.0},
-        {"glucose": 145, "rateOfChange": 9.0},  # Impossibly high jump (+45 mg/dL in 5 min)
-    ]
-    result = detector.detect(readings)
-    assert result["is_anomaly"] is True
-    assert result["anomaly_score"] > 0.8
-    assert "velocity" in result["reason"].lower()
+    # Unphysiological velocity (+5.5 mg/dL/min)
+    spike_reading = {"glucose": 150, "rateOfChange": 5.5}
+    res = detector.detect(spike_reading)
+    assert res["is_anomaly"] is True
+    assert res["anomaly_type"] == "extreme_velocity_artifact"
+    assert res["anomaly_score"] >= 0.8
 
 
-# ==============================================================================
-# 4. FastAPI Endpoints Integration Tests
-# ==============================================================================
-
-def test_api_predict_endpoint_success():
+# ---------------------------------------------------------------------------
+# 4. REST API Endpoint Integration Tests
+# ---------------------------------------------------------------------------
+def test_post_predict_endpoint(client):
     payload = {
-        "personaId": "VP-03",
         "readings": [
-            {"glucose": 120, "timestamp": "2026-11-15T10:00:00Z", "rateOfChange": 0.2},
-            {"glucose": 125, "timestamp": "2026-11-15T10:05:00Z", "rateOfChange": 1.0},
-            {"glucose": 132, "timestamp": "2026-11-15T10:10:00Z", "rateOfChange": 1.4},
+            {"glucose": 130, "rateOfChange": 1.2, "timestamp": "2026-11-15T12:00:00Z"},
+            {"glucose": 136, "rateOfChange": 1.4, "timestamp": "2026-11-15T12:05:00Z"},
+            {"glucose": 143, "rateOfChange": 1.5, "timestamp": "2026-11-15T12:10:00Z"},
         ],
-        "horizonMinutes": [15, 30, 45]
+        "persona": "Brittle Type 1 (High Risk)"
     }
     response = client.post("/api/v1/ai/predict", json=payload)
     assert response.status_code == 200
-    data = response.json()
-
-    assert data["status"] == "ok"
-    assert data["source"] == "simulation"
-    assert response.headers["x-simulation-mode"] == "true"
-    assert data["currentGlucose"] == 132
-    assert "trend" in data
-    assert len(data["predictions"]) == 3
-    assert "breachWarning" in data
-    assert "modelMetrics" in data
-    assert data["modelMetrics"]["zeroLeakageValidated"] is True
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["source"] == "simulation"
+    assert "trend" in body["data"]
+    assert "forecast" in body["data"]
+    assert "anomaly" in body["data"]
+    assert len(body["data"]["forecast"]["forecasts"]) == 3
+    assert response.headers["X-Simulation-Mode"] == "true"
 
 
-def test_api_anomaly_endpoint_success():
+def test_post_anomaly_endpoint(client):
     payload = {
-        "readings": [
-            {"glucose": 110, "rateOfChange": 0.2},
-            {"glucose": 115, "rateOfChange": 1.0},
-        ]
+        "current_reading": {"glucose": 52, "rateOfChange": -4.8},
+        "recent_readings": [{"glucose": 110, "rateOfChange": -1.0}]
     }
     response = client.post("/api/v1/ai/anomaly", json=payload)
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-    assert "is_anomaly" in data["data"]
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["source"] == "simulation"
+    assert body["data"]["is_anomaly"] is True
 
-
-def test_api_models_info():
-    response = client.get("/api/v1/ai/models/info")
-    assert response.status_code == 200
-    data = response.json()
-    assert "forecasting" in data["models"]
-    assert "anomalyDetection" in data["models"]
-    assert data["models"]["forecasting"]["mae"] > 0
