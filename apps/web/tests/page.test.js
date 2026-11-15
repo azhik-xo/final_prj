@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import PatientDashboard from '../src/app/page';
+import SimulatorPage from '../src/app/simulator/page';
 
 // Mock socket.io-client
 jest.mock('socket.io-client', () => {
@@ -27,8 +28,8 @@ beforeEach(() => {
         json: () =>
           Promise.resolve({
             data: [
-              { id: 'VP-01', name: 'Healthy Individual', baseline: 95, deviceId: 'VIRTUAL_CGM_VP01' },
-              { id: 'VP-03', name: 'Brittle Type 1', baseline: 140, deviceId: 'VIRTUAL_CGM_VP03' }
+              { id: 'VP-01', name: 'Healthy Individual', baseline: 95, deviceId: 'CGM-SENSOR-VP01', targetRange: { low: 70, high: 140 }, volatility: 1.0, description: 'Normal baseline' },
+              { id: 'VP-03', name: 'Brittle Type 1', baseline: 140, deviceId: 'CGM-SENSOR-VP03', targetRange: { low: 70, high: 180 }, volatility: 2.2, description: 'High volatility' }
             ]
           })
       });
@@ -38,7 +39,7 @@ beforeEach(() => {
         ok: true,
         json: () =>
           Promise.resolve({
-            data: { isRunning: false, isPaused: false, personaId: 'VP-01' }
+            data: { isRunning: false, isPaused: false, personaId: 'VP-03' }
           })
       });
     }
@@ -77,8 +78,8 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('PatientDashboard Component (TASK-M4-FULL)', () => {
-  it('renders dashboard title and system pipeline badges', async () => {
+describe('PatientDashboard Component (Clinical View - Route Isolation)', () => {
+  it('renders clean clinical patient dashboard header and disclaimer', async () => {
     render(<PatientDashboard />);
 
     await waitFor(() => {
@@ -86,29 +87,22 @@ describe('PatientDashboard Component (TASK-M4-FULL)', () => {
       expect(heading).toHaveTextContent(/Patient Continuous Glucose Monitor/i);
     });
 
-    // Check AI Engine active badge
-    expect(screen.getAllByText(/AI Intelligence Engine/i).length).toBeGreaterThan(0);
-
-    // Check Simulation notice
+    // Check Simulation safety notice
     expect(screen.getByText(/Non-Clinical Simulation Prototype Notice/i)).toBeInTheDocument();
   });
 
-  it('renders simulator control buttons and event injectors', async () => {
+  it('ensures simulator control buttons are NOT in the Patient Dashboard (Clean Patient Separation)', async () => {
     render(<PatientDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Start Simulation/i })).toBeInTheDocument();
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toBeInTheDocument();
     });
 
-    // Stop Engine button
-    expect(screen.getByRole('button', { name: /Stop Engine/i })).toBeInTheDocument();
-
-    // Event injection buttons
-    expect(screen.getByRole('button', { name: /Meal Spike/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Hypo Drop/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Workout/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Rescue Carbs/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reset Normal/i })).toBeInTheDocument();
+    // Simulator controls should NOT be present on the patient dashboard
+    expect(screen.queryByRole('button', { name: /Start Simulation/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Stop Engine/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Inject Meal Spike/i })).not.toBeInTheDocument();
   });
 
   it('renders AI Predictive Early-Warning card with multi-step forecasts', async () => {
@@ -128,7 +122,7 @@ describe('PatientDashboard Component (TASK-M4-FULL)', () => {
     expect(screen.getAllByText(/Zero-Leakage/i).length).toBeGreaterThan(0);
   });
 
-  it('renders metric cards with simulation source label', async () => {
+  it('renders metric cards with clinical labels and simulation source badge', async () => {
     render(<PatientDashboard />);
 
     await waitFor(() => {
@@ -136,5 +130,25 @@ describe('PatientDashboard Component (TASK-M4-FULL)', () => {
     });
 
     expect(screen.getAllByText(/simulation/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Metabolic Status/i)).toBeInTheDocument();
+  });
+});
+
+describe('SimulatorPage Component (/simulation Dedicated Route)', () => {
+  it('renders simulator control buttons, persona selector, and event injectors in /simulation', async () => {
+    render(<SimulatorPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Virtual CGM Simulator Lab/i);
+    });
+
+    // Start Simulation button in Simulator Lab
+    expect(screen.getByRole('button', { name: /Start Simulation/i })).toBeInTheDocument();
+
+    // Event injection triggers in Simulator Lab
+    expect(screen.getByRole('button', { name: /Inject Carb Meal Spike/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Inject Hypo Drop/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Inject Intense Exercise/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Inject Rescue Carbs/i })).toBeInTheDocument();
   });
 });

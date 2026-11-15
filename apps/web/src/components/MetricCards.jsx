@@ -102,66 +102,72 @@ export default function MetricCards({ reading, isConnected, persona }) {
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Virtual Patient Persona
+            Patient Clinical Profile
           </span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-            {persona?.id || 'VP-01'}
+            {persona?.id || 'VP-03'}
           </span>
         </div>
 
         <div className="mt-2">
           <h3 className="text-base font-bold text-slate-900 leading-snug">
-            {persona?.name || 'Healthy Individual (Non-Diabetic)'}
+            {persona?.name || 'Active Patient Profile'}
           </h3>
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-            {persona?.description || 'Tight glycemic control baseline (80-110 mg/dL).'}
+            {persona?.description || 'Continuous monitoring active.'}
           </p>
         </div>
 
         <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono">
-          <span>{reading?.deviceId || persona?.deviceId || 'VIRTUAL_CGM_001'}</span>
-          <span className="text-slate-400">ID: {reading?.userId || persona?.userId || 'usr_01'}</span>
+          <span>{reading?.deviceId || persona?.deviceId || 'CGM-SENSOR-001'}</span>
+          <span className="text-slate-400">ID: {reading?.userId || persona?.userId || 'usr_patient'}</span>
         </div>
       </div>
 
-      {/* 3. Physiological Trend & Active Events */}
+      {/* 3. Physiological Trend & Metabolic Status */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Active Event Shock
+            Metabolic Status
           </span>
-          <Zap className={`w-4 h-4 ${activeEvent ? 'text-amber-500 animate-bounce' : 'text-slate-300'}`} />
+          <Zap className={`w-4 h-4 ${activeEvent ? 'text-amber-500 animate-pulse' : 'text-slate-300'}`} />
         </div>
 
         <div className="mt-2">
           {activeEvent ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 font-semibold text-xs">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-              <span>{activeEvent.toUpperCase().replace('_', ' ')} IN PROGRESS</span>
+              <span>
+                {activeEvent === 'meal_spike' ? 'POST-PRANDIAL RISE' :
+                 activeEvent === 'hypo_drop' ? 'ACUTE HYPO DECLINE' :
+                 activeEvent === 'exercise' ? 'PHYSICAL ACTIVITY' :
+                 activeEvent === 'rescue_carbs' ? 'CARB RECOVERY' :
+                 activeEvent.toUpperCase().replace('_', ' ')}
+              </span>
             </div>
           ) : (
-            <span className="text-xs text-slate-500 font-medium italic">
-              Homeostatic Baseline (No Active Event)
+            <span className="text-xs text-slate-600 font-medium">
+              Homeostatic Baseline (Stable)
             </span>
           )}
-          <div className="mt-2 text-xs text-slate-600">
-            Target Range: <span className="font-semibold text-emerald-700">70 – 180 mg/dL</span>
+          <div className="mt-2 text-xs text-slate-500">
+            Target Zone: <span className="font-semibold text-emerald-700">70 – 180 mg/dL</span>
           </div>
         </div>
 
         <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span>Trend Direction</span>
+          <span>Metabolic Momentum</span>
           <span className="font-semibold capitalize text-slate-800">
             {reading?.trend ? reading.trend.replace('_', ' ') : 'Stable'}
           </span>
         </div>
       </div>
 
-      {/* 4. Telemetry Telemetry Gateway & Battery */}
+      {/* 4. Sensor Telemetry & Battery */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Telemetry Gateway
+            Sensor Telemetry
           </span>
           <span className="flex items-center gap-1 text-xs">
             <Battery className="w-3.5 h-3.5 text-slate-500" />
@@ -173,16 +179,16 @@ export default function MetricCards({ reading, isConnected, persona }) {
           <div className="flex items-center gap-2">
             <span className={`w-3 h-3 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
             <span className="text-sm font-bold text-slate-900">
-              {isConnected ? 'Socket.IO Live' : 'Disconnected'}
+              {isConnected ? 'Transmitting Live' : 'Disconnected'}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            {isConnected ? 'WebSocket stream active @ port 5000' : 'Attempting to reconnect gateway...'}
+            {isConnected ? 'Encrypted BLE Interstitial Stream' : 'Attempting to reconnect sensor...'}
           </p>
         </div>
 
         <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span>Last Tick</span>
+          <span>Last Transmission</span>
           <span className="font-mono text-[11px] text-slate-600">
             {reading?.timestamp ? new Date(reading.timestamp).toLocaleTimeString() : 'Standby'}
           </span>

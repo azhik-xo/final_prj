@@ -42,11 +42,11 @@ export default function RootLayout({ children }) {
                 Patient Dashboard
               </Link>
               <Link 
-                href="/simulator" 
+                href="/simulation" 
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                Virtual CGM Lab
+                Simulation Lab
               </Link>
             </div>
           </div>

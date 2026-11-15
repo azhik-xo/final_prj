@@ -2,10 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
-import Link from 'next/link';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, ShieldAlert, Activity, BrainCircuit } from 'lucide-react';
+import { 
+  Wifi, 
+  WifiOff, 
+  AlertTriangle, 
+  Activity, 
+  Radio
+} from 'lucide-react';
 import MetricCards from '../components/MetricCards';
-import SimulatorControls from '../components/SimulatorControls';
 import GlucoseChart from '../components/GlucoseChart';
 import AIPredictionCard from '../components/AIPredictionCard';
 
@@ -19,9 +23,7 @@ export default function PatientDashboard() {
   const [readings, setReadings] = useState([]);
   const [latestReading, setLatestReading] = useState(null);
   const [aiPrediction, setAiPrediction] = useState(null);
-  const [speedMs, setSpeedMs] = useState(2000);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   const socketRef = useRef(null);
@@ -34,7 +36,7 @@ export default function PatientDashboard() {
     }, 4000);
   }, []);
 
-  // Fetch initial configuration, historical telemetry & AI prediction
+  // Fetch initial configuration & historical telemetry
   useEffect(() => {
     let isMounted = true;
     async function loadInitialData() {
@@ -63,15 +65,13 @@ export default function PatientDashboard() {
           }
         }
 
-        // 3. Fetch historical readings from MongoDB
+        // 3. Fetch recent history for initial chart hydration
         const hRes = await fetch(`${API_BASE}/api/v1/cgm/history?limit=30`);
         if (hRes.ok) {
           const hData = await hRes.json();
-          if (isMounted && hData.data && Array.isArray(hData.data)) {
+          if (isMounted && hData.data && hData.data.length > 0) {
             setReadings(hData.data);
-            if (hData.data.length > 0) {
-              setLatestReading(hData.data[hData.data.length - 1]);
-            }
+            setLatestReading(hData.data[hData.data.length - 1]);
           }
         }
 
@@ -106,12 +106,10 @@ export default function PatientDashboard() {
 
     socket.on('connect', () => {
       setSocketConnected(true);
-      console.log('[Socket.IO] Connected to Telemetry Gateway');
     });
 
     socket.on('disconnect', () => {
       setSocketConnected(false);
-      console.log('[Socket.IO] Disconnected from Telemetry Gateway');
     });
 
     // Ingest real-time readings pushed by simulator
@@ -126,7 +124,7 @@ export default function PatientDashboard() {
       });
     });
 
-    // Ingest AI predictions pushed over Socket.IO
+    // Ingest real-time AI predictions broadcast
     socket.on('cgm:prediction', (predictionData) => {
       setAiPrediction(predictionData);
     });
@@ -134,11 +132,15 @@ export default function PatientDashboard() {
     // Receive status updates (running, paused, stopped)
     socket.on('cgm:status', (newStatus) => {
       setStatus(newStatus);
+      if (newStatus.personaId) {
+        setSelectedPersonaId(newStatus.personaId);
+      }
     });
 
-    // Receive event injection notifications
+    // Receive event notifications
     socket.on('cgm:event', (eventData) => {
-      showFeedback(`Injected event: ${eventData.activeEvent || 'none'}`, 'success');
+      const eventName = (eventData.activeEvent || 'Normal').replace('_', ' ').toUpperCase();
+      showFeedback(`Metabolic event updated: ${eventName}`, 'info');
     });
 
     return () => {
@@ -146,152 +148,41 @@ export default function PatientDashboard() {
     };
   }, [showFeedback]);
 
-  // Handlers for simulator controls
-  const handleStart = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/simulator/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: selectedPersonaId, intervalMs: speedMs })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const newStatus = data.data?.status || { isRunning: true, isPaused: false };
-        setStatus(newStatus);
-        const first = data.data?.firstReading || data.data?.initialReading;
-        if (first) {
-          setLatestReading(first);
-          setReadings((prev) => [...prev, first]);
-        }
-        showFeedback(`Simulation started for ${selectedPersonaId}!`, 'success');
-      } else {
-        showFeedback(data.error || 'Failed to start simulator', 'error');
-      }
-    } catch (err) {
-      showFeedback(`Network error: ${err.message}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
+  const activePersona = personas.find((p) => p.id === (status.personaId || selectedPersonaId)) || {
+    id: 'VP-03',
+    name: 'Brittle Type 1 (High Risk)',
+    baseline: 150,
+    targetRange: { low: 70, high: 180 },
+    deviceId: 'CGM-SENSOR-VP03',
+    userId: 'usr_patient_03'
   };
-
-  const handlePause = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/simulator/pause`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus(data.data || { isRunning: true, isPaused: true });
-        showFeedback('Simulation paused', 'info');
-      }
-    } catch (err) {
-      showFeedback(err.message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResume = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/simulator/resume`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus(data.data || { isRunning: true, isPaused: false });
-        showFeedback('Simulation resumed', 'success');
-      }
-    } catch (err) {
-      showFeedback(err.message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStop = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/simulator/stop`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus(data.data || { isRunning: false, isPaused: false });
-        showFeedback('Simulation stopped', 'info');
-      }
-    } catch (err) {
-      showFeedback(err.message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInjectEvent = async (eventType, params = {}) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/simulator/inject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType, params })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showFeedback(`Event "${eventType}" injected successfully!`, 'success');
-      } else {
-        showFeedback(data.error || 'Failed to inject event', 'error');
-      }
-    } catch (err) {
-      showFeedback(err.message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChangeSpeed = async (newSpeed) => {
-    setSpeedMs(newSpeed);
-    try {
-      await fetch(`${API_BASE}/api/v1/simulator/speed`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intervalMs: newSpeed })
-      });
-      showFeedback(`Interval updated to ${newSpeed} ms`, 'info');
-    } catch (err) {
-      console.warn('Could not update speed:', err.message);
-    }
-  };
-
-  const activePersona = personas.find((p) => p.id === selectedPersonaId);
-
-  const modules = [
-    { id: 'M1', name: 'Virtual CGM Simulator', status: 'Live & Operational', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
-    { id: 'M2', name: 'Data Pipeline & Sockets', status: 'Live & Connected', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
-    { id: 'M3', name: 'Real-Time Patient Dashboard', status: 'Interactive Live Mode', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-    { id: 'M4', name: 'AI Intelligence Engine', status: 'Forecasting + Anomaly Active', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
-    { id: 'M5', name: 'AI Diet Planner', status: 'Nutritional Analysis', color: 'bg-slate-50 border-slate-200 text-slate-700' },
-    { id: 'M6', name: 'AI Physical Activity Engine', status: 'Safety Interlocks Ready', color: 'bg-slate-50 border-slate-200 text-slate-700' },
-    { id: 'M7', name: 'Emergency Detection Engine', status: 'Emergency Protocol Ready', color: 'bg-rose-50 border-rose-200 text-rose-700' },
-    { id: 'M8', name: 'Caregiver & Doctor Portal', status: 'Clinical AGP Ready', color: 'bg-slate-50 border-slate-200 text-slate-700' },
-  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
-      {/* Top Banner / System Status */}
+      {/* Patient Header & Clinical Telemetry Status */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200 mb-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
-              TASK-M4-FULL AI Intelligence Engine Operational
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                <Radio className="w-3 h-3 text-emerald-600 animate-pulse" />
+                Continuous Interstitial Telemetry
+              </span>
+              <span className="text-xs font-mono text-slate-400">
+                Patient: <strong className="text-slate-700">{activePersona.name}</strong>
+              </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
               Patient Continuous Glucose Monitor
             </h1>
             <p className="mt-1 text-slate-600 text-xs md:text-sm">
-              Live AI-Powered Real-Time Telemetry, Short-Term Forecasting (+15/30/45m) &amp; Dynamic Emergency Simulation Loop.
+              Real-time metabolic trajectory, forward AI forecasting, and dynamic clinical emergency supervision.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Socket connection pill */}
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-xs ${
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Real-time Socket Connection Badge */}
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-2xs ${
               socketConnected
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                 : 'bg-rose-50 text-rose-800 border-rose-300'
@@ -299,23 +190,24 @@ export default function PatientDashboard() {
               {socketConnected ? (
                 <>
                   <Wifi className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-                  <span>Socket.IO Connected (Live Stream)</span>
+                  <span>Telemetry Live</span>
                 </>
               ) : (
                 <>
                   <WifiOff className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Socket.IO Reconnecting...</span>
+                  <span>Connecting...</span>
                 </>
               )}
             </div>
 
-            {/* In-Memory / DB Status */}
-            <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 font-mono">
-              MongoDB: <span className="text-emerald-700 font-semibold">Active</span>
+            {/* Sensor Device Badge */}
+            <div className="text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 font-mono flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-slate-500" />
+              <span>{activePersona.deviceId || 'CGM-SENSOR-001'}</span>
             </div>
 
-            {/* Simulation tag */}
-            <div className="text-xs text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-200 font-semibold">
+            {/* Discreet Simulation Tag per ADR-007 */}
+            <div className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 font-mono">
               source: simulation
             </div>
           </div>
@@ -336,80 +228,28 @@ export default function PatientDashboard() {
             </button>
           </div>
         )}
-
-        {/* Dedicated Simulator Lab Route Link */}
-        <div className="mt-4 p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5 text-slate-800">
-            <Activity className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>
-              <strong>Dedicated Virtual CGM Simulator Lab</strong> is available on a separate route at <code className="bg-emerald-100/60 px-1.5 py-0.5 rounded text-emerald-900 font-mono text-[11px]">/simulator</code>. Switch clinical personas, trigger spikes/lows, and inspect raw telemetry.
-            </span>
-          </div>
-          <Link
-            href="/simulator"
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shrink-0 shadow-xs"
-          >
-            <span>Open Simulator Lab</span>
-            <span>&rarr;</span>
-          </Link>
-        </div>
       </div>
 
-      {/* 1. Simulator Control Panel & Persona Selector */}
-      <SimulatorControls
-        personas={personas}
-        selectedPersonaId={selectedPersonaId}
-        onSelectPersona={setSelectedPersonaId}
-        status={status}
-        onStart={handleStart}
-        onPause={handlePause}
-        onResume={handleResume}
-        onStop={handleStop}
-        onInjectEvent={handleInjectEvent}
-        speedMs={speedMs}
-        onChangeSpeed={handleChangeSpeed}
-        isLoading={isLoading}
-      />
-
-      {/* 2. Hero Metric Cards Display */}
+      {/* 1. Clinical Metric Cards Display */}
       <MetricCards
         reading={latestReading}
         readings={readings}
-        activePersona={activePersona}
+        persona={activePersona}
+        isConnected={socketConnected}
       />
 
-      {/* 3. AI Predictive Early-Warning & Multi-Step Forecast Card (TASK-M4-FULL) */}
+      {/* 2. AI Predictive Early-Warning & Multi-Step Forecast Card (TASK-M4-FULL) */}
       <AIPredictionCard prediction={aiPrediction} />
 
-      {/* 4. Interactive Real-Time Recharts Line Graph with AI Forecast Extension */}
+      {/* 3. Interactive Real-Time Recharts Line Graph with AI Forecast Extension */}
       <GlucoseChart
         readings={readings}
         predictions={aiPrediction?.predictions || []}
         maxPoints={50}
       />
 
-      {/* Platform Architecture & Modules Matrix */}
-      <div className="mt-8 pt-6 border-t border-slate-200">
-        <h2 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-          Platform Architecture &amp; Module Matrix
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-          {modules.map((m) => (
-            <div key={m.id} className={`rounded-xl border p-4 flex flex-col justify-between ${m.color}`}>
-              <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider">{m.id}</span>
-                <h3 className="font-semibold text-xs mt-0.5">{m.name}</h3>
-              </div>
-              <div className="mt-3 pt-2 border-t border-current/10 text-[11px] font-medium">
-                {m.status}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Clinical Disclaimer Callout per ADR-007 */}
-      <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-amber-900 text-xs leading-relaxed mb-6 shadow-xs">
+      <div className="mt-8 bg-amber-50 rounded-2xl border border-amber-200 p-6 text-amber-900 text-xs leading-relaxed mb-6 shadow-2xs">
         <h3 className="font-bold text-sm text-amber-950 mb-1 flex items-center gap-1.5">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <span>Non-Clinical Simulation Prototype Notice</span>
