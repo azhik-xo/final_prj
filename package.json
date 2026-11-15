@@ -1,0 +1,33 @@
+{
+  "name": "glucoguard-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GlucoGuard — AI-Powered Continuous Glucose Monitoring & Intelligent Emergency Response System",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "test:ai": "cd services/ai-engine && .\\.venv\\Scripts\\pytest.exe",
+    "test:all": "npm test && npm run test:ai",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:ai": "cd services/ai-engine && .\\.venv\\Scripts\\uvicorn.exe main:app --reload --port 8000",
+    "start:api": "npm run start --workspace=apps/api",
+    "start:web": "npm run start --workspace=apps/web"
+  },
+  "keywords": [
+    "cgm",
+    "glucose-monitoring",
+    "simulation",
+    "healthcare-ai",
+    "emergency-response"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azhik-xo/final_prj.git"
+  },
+  "author": "GlucoGuard Team",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: glucoguard-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: glucoguard
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.api
+    container_name: glucoguard-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/glucoguard
+      CORS_ORIGIN: http://localhost:3000
+      AI_ENGINE_URL: http://ai-engine:8000
+    depends_on:
+      - mongodb
+
+  ai-engine:
+    build:
+      context: ../services/ai-engine
+      dockerfile: Dockerfile
+    container_name: glucoguard-ai-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      HOST: 0.0.0.0
+      ENVIRONMENT: development
+
+  web:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.web
+    container_name: glucoguard-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:5000
+      NEXT_PUBLIC_SIMULATION_MODE: "true"
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:
+
