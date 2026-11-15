@@ -10,14 +10,16 @@ import {
   RotateCcw, 
   Square, 
   Zap, 
-  Pizza, 
   TrendingDown, 
-  Coffee, 
-  HeartPulse, 
   ArrowLeft,
   Wifi,
   WifiOff,
-  Code2
+  Code2,
+  User,
+  Settings2,
+  Utensils,
+  Sparkles,
+  Dumbbell
 } from 'lucide-react';
 import GlucoseChart from '../../components/GlucoseChart';
 
@@ -258,7 +260,8 @@ export default function SimulatorPage() {
         {/* Column 1: Persona Selection */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <span>👤</span> 1. Select Clinical Persona
+            <User className="w-4 h-4 text-emerald-600" />
+            <span>1. Select Clinical Persona</span>
           </h2>
           <select
             value={selectedPersonaId}
@@ -298,7 +301,8 @@ export default function SimulatorPage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <span>⚙️</span> 2. Engine Lifecycle
+              <Settings2 className="w-4 h-4 text-emerald-600" />
+              <span>2. Engine Lifecycle</span>
             </h2>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {!status.isRunning ? (
@@ -364,7 +368,8 @@ export default function SimulatorPage() {
         {/* Column 3: Event Injections */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <span>⚡</span> 3. Dynamic Event Injection
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span>3. Dynamic Event Injection</span>
           </h2>
           <p className="text-[11px] text-slate-500 mb-3">
             Inject real-time physiological stimuli to test alarms & curves:
@@ -376,10 +381,10 @@ export default function SimulatorPage() {
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold transition-all disabled:opacity-40"
             >
               <span className="flex items-center gap-2">
-                <Pizza className="w-4 h-4 text-amber-600" />
+                <Utensils className="w-4 h-4 text-amber-600 shrink-0" />
                 Inject Carb Meal Spike
               </span>
-              <span className="text-[10px] text-amber-700">+75 mg/dL</span>
+              <span className="text-[10px] text-amber-700 font-mono">+75 mg/dL</span>
             </button>
 
             <button
@@ -388,10 +393,10 @@ export default function SimulatorPage() {
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-900 text-xs font-semibold transition-all disabled:opacity-40"
             >
               <span className="flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-red-600" />
+                <TrendingDown className="w-4 h-4 text-red-600 shrink-0" />
                 Inject Hypo Drop (Emergency)
               </span>
-              <span className="text-[10px] text-red-700">&lt;55 mg/dL</span>
+              <span className="text-[10px] text-red-700 font-mono">&lt;55 mg/dL</span>
             </button>
 
             <button
@@ -400,10 +405,10 @@ export default function SimulatorPage() {
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-semibold transition-all disabled:opacity-40"
             >
               <span className="flex items-center gap-2">
-                <HeartPulse className="w-4 h-4 text-blue-600" />
+                <Dumbbell className="w-4 h-4 text-blue-600 shrink-0" />
                 Inject Intense Exercise
               </span>
-              <span className="text-[10px] text-blue-700">-1.5 mg/dL/min</span>
+              <span className="text-[10px] text-blue-700 font-mono">-1.5 mg/dL/min</span>
             </button>
 
             <button
@@ -412,10 +417,10 @@ export default function SimulatorPage() {
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-semibold transition-all disabled:opacity-40"
             >
               <span className="flex items-center gap-2">
-                <Coffee className="w-4 h-4 text-emerald-600" />
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                 Inject Rescue Carbs
               </span>
-              <span className="text-[10px] text-emerald-700">Recovery</span>
+              <span className="text-[10px] text-emerald-700 font-mono">Recovery</span>
             </button>
           </div>
         </div>

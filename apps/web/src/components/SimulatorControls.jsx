@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Play, Pause, Square, Zap, RotateCcw, AlertTriangle, Utensils, Activity, HeartPulse } from 'lucide-react';
+import { Play, Pause, Square, Zap, RotateCcw, AlertTriangle, Utensils, Activity, Sparkles, TrendingDown } from 'lucide-react';
 
 export default function SimulatorControls({
   personas = [],
@@ -146,7 +146,7 @@ export default function SimulatorControls({
             disabled={!isRunning || isLoading}
             className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 text-amber-900 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-left"
           >
-            <span className="text-base">🍕</span>
+            <Utensils className="w-4 h-4 text-amber-600 shrink-0" />
             <div>
               <div>Meal Spike</div>
               <div className="text-[10px] font-normal text-amber-700">+60-80 mg/dL</div>
@@ -160,7 +160,7 @@ export default function SimulatorControls({
             disabled={!isRunning || isLoading}
             className="flex items-center gap-2 p-2.5 rounded-xl border border-red-200 bg-red-50/70 hover:bg-red-100/80 text-red-900 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-left"
           >
-            <span className="text-base">📉</span>
+            <TrendingDown className="w-4 h-4 text-red-600 shrink-0" />
             <div>
               <div>Hypo Drop</div>
               <div className="text-[10px] font-normal text-red-700">&lt; -2.5 mg/dL/min</div>
@@ -174,7 +174,7 @@ export default function SimulatorControls({
             disabled={!isRunning || isLoading}
             className="flex items-center gap-2 p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 text-blue-900 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-left"
           >
-            <span className="text-base">🏃</span>
+            <Activity className="w-4 h-4 text-blue-600 shrink-0" />
             <div>
               <div>Workout</div>
               <div className="text-[10px] font-normal text-blue-700">-1.5 mg/dL/min</div>
@@ -188,7 +188,7 @@ export default function SimulatorControls({
             disabled={!isRunning || isLoading}
             className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 text-emerald-900 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-left"
           >
-            <span className="text-base">🍭</span>
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
               <div>Rescue Carbs</div>
               <div className="text-[10px] font-normal text-emerald-700">Fast Recovery</div>
@@ -202,7 +202,7 @@ export default function SimulatorControls({
             disabled={!isRunning || isLoading}
             className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-left"
           >
-            <RotateCcw className="w-4 h-4 text-slate-600" />
+            <RotateCcw className="w-4 h-4 text-slate-600 shrink-0" />
             <div>
               <div>Reset Normal</div>
               <div className="text-[10px] font-normal text-slate-600">Homeostasis</div>
