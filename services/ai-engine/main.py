@@ -4,6 +4,8 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from routes.prediction_routes import router as ai_router
+
 app = FastAPI(
     title="GlucoGuard AI Intelligence Engine",
     description="Microservice for glucose trend analysis, short-term forecasting, and anomaly detection (Simulation Prototype)",
@@ -31,7 +33,12 @@ async def add_simulation_headers(request, call_next):
     response: Response = await call_next(request)
     response.headers["X-Simulation-Mode"] = "true"
     response.headers["X-AI-Engine-Service"] = "GlucoGuard-AI"
+    response.headers["X-GlucoGuard-Disclaimer"] = "Simulation-Only"
     return response
+
+# Mount AI Intelligence Engine Routes under /api/v1/ai and /ai
+app.include_router(ai_router, prefix="/api/v1/ai")
+app.include_router(ai_router, prefix="/ai")
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
@@ -51,7 +58,10 @@ def root():
         "service": "ai-engine",
         "simulation_mode": True,
         "disclaimer": "Educational & Research Simulation Prototype Only. Not a Medical Device.",
-        "health": "/health"
+        "health": "/health",
+        "predict": "/api/v1/ai/predict",
+        "anomaly": "/api/v1/ai/anomaly",
+        "modelsInfo": "/api/v1/ai/models/info"
     }
 
 if __name__ == "__main__":
@@ -59,4 +69,3 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
     uvicorn.run("main:app", host=host, port=port, reload=True)
-

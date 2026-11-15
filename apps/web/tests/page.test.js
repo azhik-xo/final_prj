@@ -42,6 +42,30 @@ beforeEach(() => {
           })
       });
     }
+    if (url.includes('/prediction')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            data: {
+              currentGlucose: 125,
+              trend: { rateOfChange: 0.5, category: 'stable', arrow: '→', momentum: 'steady' },
+              predictions: [
+                { minutesAhead: 15, projectedGlucose: 132, lowerBound: 122, upperBound: 142 },
+                { minutesAhead: 30, projectedGlucose: 140, lowerBound: 126, upperBound: 154 },
+                { minutesAhead: 45, projectedGlucose: 148, lowerBound: 130, upperBound: 166 }
+              ],
+              breachWarning: {
+                breachPredicted: false,
+                severity: 'safe',
+                message: 'Target Glycemic Stability Projected'
+              },
+              modelMetrics: { mae: 4.65, rmse: 6.32, zeroLeakageValidated: true },
+              anomaly: { is_anomaly: false }
+            }
+          })
+      });
+    }
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({ data: [] })
@@ -53,8 +77,8 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('PatientDashboard Component (TASK-INT-01)', () => {
-  it('renders dashboard title and E2E pipeline badge', async () => {
+describe('PatientDashboard Component (TASK-M4-FULL)', () => {
+  it('renders dashboard title and system pipeline badges', async () => {
     render(<PatientDashboard />);
 
     await waitFor(() => {
@@ -62,8 +86,8 @@ describe('PatientDashboard Component (TASK-INT-01)', () => {
       expect(heading).toHaveTextContent(/Patient Continuous Glucose Monitor/i);
     });
 
-    // Check TASK-INT-01 status badge
-    expect(screen.getByText(/TASK-INT-01/i)).toBeInTheDocument();
+    // Check AI Engine active badge
+    expect(screen.getAllByText(/AI Intelligence Engine/i).length).toBeGreaterThan(0);
 
     // Check Simulation notice
     expect(screen.getByText(/Non-Clinical Simulation Prototype Notice/i)).toBeInTheDocument();
@@ -85,6 +109,23 @@ describe('PatientDashboard Component (TASK-INT-01)', () => {
     expect(screen.getByRole('button', { name: /Workout/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Rescue Carbs/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Reset Normal/i })).toBeInTheDocument();
+  });
+
+  it('renders AI Predictive Early-Warning card with multi-step forecasts', async () => {
+    render(<PatientDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/AI Trajectory Forecast & Predictive Early-Warning/i)).toBeInTheDocument();
+    });
+
+    // Forecast horizons
+    expect(screen.getByText(/\+15 Minutes/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+30 Minutes/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+45 Minutes/i)).toBeInTheDocument();
+
+    // Accuracy metrics
+    expect(screen.getByText(/MAE:/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Zero-Leakage/i).length).toBeGreaterThan(0);
   });
 
   it('renders metric cards with simulation source label', async () => {

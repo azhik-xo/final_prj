@@ -1,47 +1,45 @@
-/**
- * GlucoGuard CGM Telemetry Ingestion & History Routes (Module M2)
- *
- * Provides RESTful access to historical glucose readings and external CGM ingestion:
- * - GET /api/v1/cgm/history?deviceId=...&limit=50
- * - GET /api/v1/cgm/latest?deviceId=...
- * - POST /api/v1/cgm/readings (Ingestion endpoint per ADR-002)
- *
- * @module routes/cgm.routes
- */
-
 const express = require('express');
-const router = express.Router();
 const mongoose = require('mongoose');
+const router = express.Router();
 const GlucoseReading = require('../models/glucoseReading.model');
-const { broadcastReading } = require('../sockets/cgmSocket');
-const simulatorService = require('../services/simulator.service');
+const aiService = require('../services/ai.service');
 
-// GET /api/v1/cgm/history
+// In-memory buffer for offline/test mode when MongoDB connection is not active
+const inMemoryReadings = [];
+
+/**
+ * @route GET /api/v1/cgm/history
+ * @desc Get historical glucose readings for a device/patient
+ * @query deviceId?: string, userId?: string, limit?: number
+ */
 router.get('/history', async (req, res) => {
   try {
     const { deviceId, userId, limit = 50 } = req.query;
-    const query = {};
-    if (deviceId) query.deviceId = deviceId;
-    if (userId) query.userId = userId;
-
     const parsedLimit = Math.min(500, Math.max(1, parseInt(limit, 10) || 50));
 
     let chronological = [];
+
     if (mongoose.connection.readyState === 1) {
+      const query = {};
+      if (deviceId) query.deviceId = deviceId;
+      if (userId) query.userId = userId;
+
       const readings = await GlucoseReading.find(query)
         .sort({ timestamp: -1 })
         .limit(parsedLimit)
         .lean();
+
       chronological = readings.reverse();
     } else {
-      // If DB is offline, provide latest in-memory reading if available
-      const latest = simulatorService.getLatestReading();
-      if (latest) {
-        chronological = [latest];
-      }
+      // In-memory fallback
+      let filtered = [...inMemoryReadings];
+      if (deviceId) filtered = filtered.filter(r => r.deviceId === deviceId);
+      if (userId) filtered = filtered.filter(r => r.userId === userId);
+      chronological = filtered.slice(-parsedLimit);
     }
 
     res.status(200).json({
+      success: true,
       status: 'ok',
       count: chronological.length,
       data: chronological,
@@ -49,56 +47,67 @@ router.get('/history', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       status: 'error',
-      message: error.message,
-      source: 'simulation'
+      message: error.message
     });
   }
 });
 
-// GET /api/v1/cgm/latest
-router.get('/latest', async (req, res) => {
+/**
+ * @route GET /api/v1/cgm/prediction
+ * @desc Fetch short-term AI forecast (+15, +30, +45m) and early breach warning
+ * @query deviceId?: string, userId?: string, personaId?: string
+ */
+router.get('/prediction', async (req, res) => {
   try {
-    const { deviceId } = req.query;
-    let latest = null;
+    const { deviceId, userId, personaId } = req.query;
 
+    let readings = [];
     if (mongoose.connection.readyState === 1) {
-      const query = deviceId ? { deviceId } : {};
-      latest = await GlucoseReading.findOne(query).sort({ timestamp: -1 }).lean();
+      const query = {};
+      if (deviceId) query.deviceId = deviceId;
+      if (userId) query.userId = userId;
+
+      const results = await GlucoseReading.find(query)
+        .sort({ timestamp: -1 })
+        .limit(12)
+        .lean();
+      readings = results.reverse();
+    } else {
+      let filtered = [...inMemoryReadings];
+      if (deviceId) filtered = filtered.filter(r => r.deviceId === deviceId);
+      if (userId) filtered = filtered.filter(r => r.userId === userId);
+      readings = filtered.slice(-12);
     }
 
-    if (!latest) {
-      latest = simulatorService.getLatestReading();
-    }
-
-    if (!latest) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'No readings found',
-        source: 'simulation'
-      });
-    }
+    const prediction = await aiService.getPrediction(readings, [15, 30, 45], personaId || 'VP-01');
 
     res.status(200).json({
+      success: true,
       status: 'ok',
-      data: latest,
+      data: prediction,
       source: 'simulation'
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       status: 'error',
-      message: error.message,
-      source: 'simulation'
+      message: error.message
     });
   }
 });
 
-// POST /api/v1/cgm/readings (Direct Ingestion Endpoint)
+/**
+ * @route POST /api/v1/cgm/readings
+ * @desc Direct ingestion endpoint for telemetry readings
+ */
 router.post('/readings', async (req, res) => {
   try {
     const payload = req.body;
-    if (!payload || !payload.glucose || !payload.deviceId) {
+    if (!payload || payload.glucose === undefined || !payload.deviceId) {
       return res.status(400).json({
+        success: false,
         status: 'error',
         message: 'Invalid reading payload: "glucose" and "deviceId" are required'
       });
@@ -114,18 +123,29 @@ router.post('/readings', async (req, res) => {
     let saved;
     if (mongoose.connection.readyState === 1) {
       saved = await GlucoseReading.create(readingData);
-      saved = saved.toJSON();
     } else {
+      // Offline / Test mock document
       const doc = new GlucoseReading(readingData);
       const validationError = doc.validateSync();
-      if (validationError) throw validationError;
-      saved = doc.toJSON();
+      if (validationError) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          message: validationError.message
+        });
+      }
+      saved = {
+        _id: 'mem_' + Date.now(),
+        ...readingData
+      };
+      inMemoryReadings.push(saved);
+      if (inMemoryReadings.length > 500) {
+        inMemoryReadings.shift();
+      }
     }
 
-    // Broadcast in real-time over Socket.IO
-    broadcastReading(saved);
-
     res.status(201).json({
+      success: true,
       status: 'ok',
       message: 'Reading ingested successfully',
       data: saved,
@@ -133,9 +153,9 @@ router.post('/readings', async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
+      success: false,
       status: 'error',
-      message: error.message,
-      source: 'simulation'
+      message: error.message
     });
   }
 });

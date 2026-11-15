@@ -19,7 +19,8 @@ import {
   Settings2,
   Utensils,
   Sparkles,
-  Dumbbell
+  Dumbbell,
+  X
 } from 'lucide-react';
 import GlucoseChart from '../../components/GlucoseChart';
 
@@ -251,7 +252,9 @@ export default function SimulatorPage() {
           'bg-blue-50 border-blue-200 text-blue-800'
         }`}>
           <span>{feedback.text}</span>
-          <button onClick={() => setFeedback(null)} className="text-slate-400 hover:text-slate-700">✕</button>
+          <button onClick={() => setFeedback(null)} className="text-slate-400 hover:text-slate-700" aria-label="Close notification">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

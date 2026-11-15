@@ -23,6 +23,7 @@
 | Task ID | Module | Title | Dependencies | Status | Assignee |
 |---|---|---|---|---|---|
 | **`TASK-INT-01`** | **M2+M3** | Real-Time E2E Pipeline: MongoDB, Socket.IO Gateway & Interactive Next.js Dashboard | `TASK-M1-01` | **APPROVED** | Developer AI |
+| **`TASK-M4-FULL`** | **M4** | AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection | `TASK-INT-01` | **IN_REVIEW** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -53,6 +54,57 @@
 ---
 
 ## 3. Detailed Specifications for Active & Priority Tasks
+
+### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
+- **Module:** M4 (AI Intelligence Engine)
+- **Status:** **`IN_REVIEW`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-INT-01`
+- **Description:**  
+  Implement the AI Intelligence Engine in `services/ai-engine/` using Python, FastAPI, Scikit-learn, Pandas, and NumPy:
+  1. **Submodule A (Trend Analytics & Velocity):**
+     - Smooth finite-difference rate of change ($dG/dt$) and acceleration ($d^2G/dt^2$).
+     - Categorize trajectory momentum.
+  2. **Submodule B (Short-Term Glucose Forecasting):**
+     - Implement benchmark-first machine learning models:
+       * Linear/Ridge Regression with Polynomial Features (Baseline)
+       * Random Forest Regressor / Gradient Boosting for non-linear kinetics
+     - Multi-step forecasting for $+15$, $+30$, and $+45$ minutes ahead.
+     - Calculate prediction intervals (confidence bounds).
+     - Clinical threshold breach detector: predicts if glucose will cross $<70$ mg/dL (hypo) or $>180$ mg/dL (hyper) within the next 45 minutes and computes estimated time-to-breach.
+     - Evaluate and log MAE and RMSE metrics on held-out temporal slices (strict zero-leakage validation).
+  3. **Submodule C (Anomaly Detection):**
+     - Unsupervised Isolation Forest model to flag unphysiological rates of change or sensor telemetry artifacts.
+  4. **FastAPI Service Endpoints (`services/ai-engine`):**
+     - `POST /api/v1/ai/predict`: Evaluates recent sequence of readings and outputs multi-step forecasts, confidence intervals, trajectory trend, and early breach warning.
+     - `POST /api/v1/ai/anomaly`: Detects anomalies in latest reading relative to recent historical window.
+  5. **Backend & Frontend Integration:**
+     - In `apps/api`: Integrate `ai.service.js` to automatically fetch predictions when readings are ingested or requested, and emit `cgm:prediction` over Socket.IO.
+     - In `apps/web`:
+       * Render the dotted forecast line extending $+15$, $+30$, $+45$ minutes into the future directly on the Recharts graph!
+       * Display an **AI Predictive Early-Warning Card** on the dashboard with projected glucose, time-to-breach countdown, and model performance metrics (MAE/RMSE).
+       * Strictly adhere to UI guidelines: No emojis, only clean Lucide library icons, human-designed clinical SaaS layout.
+- **Acceptance Criteria:**
+  1. Microservice endpoints `POST /api/v1/ai/predict` and `POST /api/v1/ai/anomaly` operational with Pydantic validation and `"source": "simulation"`.
+  2. Model outputs forecasts at $+15$, $+30$, and $+45$ minutes with bounded physiological values ($[40, 400]$ mg/dL).
+  3. Anomaly detection identifies extreme sudden spikes or drops.
+  4. Unit and integration tests pass in Python (`pytest`) and Node (`node --test`).
+  5. Dashboard Recharts displays future trajectory line alongside real-time points without rendering glitches.
+- **Expected Deliverables:**
+  - `services/ai-engine/models/forecaster.py`
+  - `services/ai-engine/models/anomaly_detector.py`
+  - `services/ai-engine/models/trend_analyzer.py`
+  - `services/ai-engine/routes/prediction_routes.py`
+  - `services/ai-engine/tests/test_ai_engine.py`
+  - `apps/api/src/services/ai.service.js`
+  - `apps/web/src/components/AIPredictionCard.jsx`
+  - Updated `apps/web/src/components/GlucoseChart.jsx` (with forecast trajectory)
+- **Verification Evidence:**
+  - `pytest` passes all tests with 0 failures.
+  - Calling `/api/v1/ai/predict` returns valid forecasts and confidence bounds.
+  - Dotted forecast line renders on `http://localhost:3000`.
+
+---
 
 ### `TASK-INT-01`: Real-Time E2E Pipeline: MongoDB, Socket.IO Gateway & Interactive Next.js Dashboard
 - **Module:** M2 (Data Pipeline) + M3 (Real-Time Dashboard)

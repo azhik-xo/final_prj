@@ -118,6 +118,17 @@ describe('TASK-INT-01: CGM Telemetry API & Persistence Validation', () => {
     assert.equal(res.body.source, 'simulation');
   });
 
+  it('GET /api/v1/cgm/prediction should return short-term AI forecasts and breach warning', async () => {
+    const res = await request(app).get('/api/v1/cgm/prediction?deviceId=VIRTUAL_CGM_TEST01');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.source, 'simulation');
+    assert.ok(res.body.data);
+    assert.ok(Array.isArray(res.body.data.predictions));
+    assert.ok('breachWarning' in res.body.data);
+    assert.ok('modelMetrics' in res.body.data);
+  });
+
   it('GlucoseReading model schema should enforce physiological clamping [40, 400]', () => {
     const invalidLow = new GlucoseReading({
       deviceId: 'TEST',

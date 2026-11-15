@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import Link from 'next/link';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, AlertTriangle, ShieldAlert, Activity, BrainCircuit } from 'lucide-react';
 import MetricCards from '../components/MetricCards';
 import SimulatorControls from '../components/SimulatorControls';
 import GlucoseChart from '../components/GlucoseChart';
+import AIPredictionCard from '../components/AIPredictionCard';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
@@ -17,6 +18,7 @@ export default function PatientDashboard() {
   const [status, setStatus] = useState({ isRunning: false, isPaused: false });
   const [readings, setReadings] = useState([]);
   const [latestReading, setLatestReading] = useState(null);
+  const [aiPrediction, setAiPrediction] = useState(null);
   const [speedMs, setSpeedMs] = useState(2000);
   const [socketConnected, setSocketConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +34,7 @@ export default function PatientDashboard() {
     }, 4000);
   }, []);
 
-  // Fetch initial configuration & historical telemetry
+  // Fetch initial configuration, historical telemetry & AI prediction
   useEffect(() => {
     let isMounted = true;
     async function loadInitialData() {
@@ -61,13 +63,24 @@ export default function PatientDashboard() {
           }
         }
 
-        // 3. Fetch recent history for initial chart hydration
+        // 3. Fetch historical readings from MongoDB
         const hRes = await fetch(`${API_BASE}/api/v1/cgm/history?limit=30`);
         if (hRes.ok) {
           const hData = await hRes.json();
-          if (isMounted && hData.data && hData.data.length > 0) {
+          if (isMounted && hData.data && Array.isArray(hData.data)) {
             setReadings(hData.data);
-            setLatestReading(hData.data[hData.data.length - 1]);
+            if (hData.data.length > 0) {
+              setLatestReading(hData.data[hData.data.length - 1]);
+            }
+          }
+        }
+
+        // 4. Fetch initial AI prediction
+        const predRes = await fetch(`${API_BASE}/api/v1/cgm/prediction`);
+        if (predRes.ok) {
+          const predData = await predRes.json();
+          if (isMounted && predData.data) {
+            setAiPrediction(predData.data);
           }
         }
       } catch (err) {
@@ -113,6 +126,11 @@ export default function PatientDashboard() {
       });
     });
 
+    // Ingest AI predictions pushed over Socket.IO
+    socket.on('cgm:prediction', (predictionData) => {
+      setAiPrediction(predictionData);
+    });
+
     // Receive status updates (running, paused, stopped)
     socket.on('cgm:status', (newStatus) => {
       setStatus(newStatus);
@@ -139,14 +157,16 @@ export default function PatientDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        setStatus(data.data.status || { isRunning: true, isPaused: false });
-        if (data.data.firstReading) {
-          setLatestReading(data.data.firstReading);
-          setReadings((prev) => [...prev, data.data.firstReading]);
+        const newStatus = data.data?.status || { isRunning: true, isPaused: false };
+        setStatus(newStatus);
+        const first = data.data?.firstReading || data.data?.initialReading;
+        if (first) {
+          setLatestReading(first);
+          setReadings((prev) => [...prev, first]);
         }
         showFeedback(`Simulation started for ${selectedPersonaId}!`, 'success');
       } else {
-        showFeedback(data.error || 'Failed to start simulation', 'error');
+        showFeedback(data.error || 'Failed to start simulator', 'error');
       }
     } catch (err) {
       showFeedback(`Network error: ${err.message}`, 'error');
@@ -244,7 +264,7 @@ export default function PatientDashboard() {
     { id: 'M1', name: 'Virtual CGM Simulator', status: 'Live & Operational', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
     { id: 'M2', name: 'Data Pipeline & Sockets', status: 'Live & Connected', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
     { id: 'M3', name: 'Real-Time Patient Dashboard', status: 'Interactive Live Mode', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-    { id: 'M4', name: 'AI Intelligence Engine', status: 'FastAPI Microservice Ready', color: 'bg-amber-50 border-amber-200 text-amber-700' },
+    { id: 'M4', name: 'AI Intelligence Engine', status: 'Forecasting + Anomaly Active', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
     { id: 'M5', name: 'AI Diet Planner', status: 'Nutritional Analysis', color: 'bg-slate-50 border-slate-200 text-slate-700' },
     { id: 'M6', name: 'AI Physical Activity Engine', status: 'Safety Interlocks Ready', color: 'bg-slate-50 border-slate-200 text-slate-700' },
     { id: 'M7', name: 'Emergency Detection Engine', status: 'Emergency Protocol Ready', color: 'bg-rose-50 border-rose-200 text-rose-700' },
@@ -257,15 +277,15 @@ export default function PatientDashboard() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              TASK-INT-01 Real-Time E2E Pipeline Active
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200 mb-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+              TASK-M4-FULL AI Intelligence Engine Operational
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
               Patient Continuous Glucose Monitor
             </h1>
             <p className="mt-1 text-slate-600 text-xs md:text-sm">
-              Live AI-Powered Real-Time Telemetry &amp; Dynamic Emergency Simulation Loop.
+              Live AI-Powered Real-Time Telemetry, Short-Term Forecasting (+15/30/45m) &amp; Dynamic Emergency Simulation Loop.
             </p>
           </div>
 
@@ -358,9 +378,13 @@ export default function PatientDashboard() {
         activePersona={activePersona}
       />
 
-      {/* 3. Interactive Real-Time Recharts Line Graph */}
+      {/* 3. AI Predictive Early-Warning & Multi-Step Forecast Card (TASK-M4-FULL) */}
+      <AIPredictionCard prediction={aiPrediction} />
+
+      {/* 4. Interactive Real-Time Recharts Line Graph with AI Forecast Extension */}
       <GlucoseChart
         readings={readings}
+        predictions={aiPrediction?.predictions || []}
         maxPoints={50}
       />
 
@@ -387,7 +411,8 @@ export default function PatientDashboard() {
       {/* Clinical Disclaimer Callout per ADR-007 */}
       <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-amber-900 text-xs leading-relaxed mb-6 shadow-xs">
         <h3 className="font-bold text-sm text-amber-950 mb-1 flex items-center gap-1.5">
-          <span>⚠️</span> Non-Clinical Simulation Prototype Notice
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>Non-Clinical Simulation Prototype Notice</span>
         </h3>
         <p>
           GlucoGuard is developed strictly as an educational and engineering simulation prototype. Readings displayed on this interface are synthetic simulation values generated for computational modeling and algorithmic demonstration. This software must not be used to direct medical care, administer insulin or pharmacological therapy, or replace licensed physician oversight.

@@ -1,17 +1,41 @@
 const { Server } = require('socket.io');
-const GlucoseReading = require('../models/glucoseReading.model');
+const aiService = require('../services/ai.service');
 
 let ioInstance = null;
+const rollingReadings = [];
+
+function broadcastReading(reading) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:reading', reading);
+  }
+}
+
+function broadcastStatus(status) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:status', status);
+  }
+}
+
+function broadcastEvent(eventData) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:event', eventData);
+  }
+}
+
+function broadcastPrediction(prediction) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:prediction', prediction);
+  }
+}
 
 /**
- * Initializes Socket.IO on the HTTP server and wires up SimulatorEngine events.
+ * Initializes Socket.IO on the HTTP server.
  *
  * @param {import('node:http').Server} httpServer - Node.js HTTP server instance
  * @param {string} [corsOrigin] - Allowed CORS origin
- * @param {object} [simulatorService] - Simulator singleton service
  * @returns {Server} Socket.IO server instance
  */
-function initCgmSocket(httpServer, corsOrigin, simulatorService) {
+function initSocket(httpServer, corsOrigin) {
   const io = new Server(httpServer, {
     cors: {
       origin: [corsOrigin || '*', 'http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -27,16 +51,51 @@ function initCgmSocket(httpServer, corsOrigin, simulatorService) {
   io.on('connection', (socket) => {
     console.log(`[Socket] Client connected: ${socket.id}`);
 
-    // Allow subscribing to specific device or patient rooms
-    socket.on('subscribe:device', (deviceId) => {
-      if (deviceId) {
-        socket.join(`device:${deviceId}`);
+    // Lazy load simulator service to prevent circular dependencies
+    const simulatorService = require('../services/simulator.service');
+
+    // Send current status & latest reading immediately to new client
+    socket.emit('cgm:status', simulatorService.getStatus());
+    const latest = simulatorService.getLatestReading();
+    if (latest) {
+      socket.emit('cgm:reading', latest);
+    }
+
+    // Send latest AI prediction if available
+    if (rollingReadings.length > 0) {
+      aiService.getPrediction(rollingReadings)
+        .then((pred) => socket.emit('cgm:prediction', pred))
+        .catch(() => {});
+    }
+
+    // Support bidirectional controls over WebSocket
+    socket.on('simulator:start', (data) => {
+      try {
+        const { personaId, intervalMs } = data || {};
+        simulatorService.start(personaId, { intervalMs });
+      } catch (err) {
+        socket.emit('simulator:error', { message: err.message });
       }
     });
 
-    socket.on('unsubscribe:device', (deviceId) => {
-      if (deviceId) {
-        socket.leave(`device:${deviceId}`);
+    socket.on('simulator:pause', () => {
+      simulatorService.pause();
+    });
+
+    socket.on('simulator:resume', () => {
+      simulatorService.resume();
+    });
+
+    socket.on('simulator:stop', () => {
+      simulatorService.stop();
+    });
+
+    socket.on('simulator:inject', (data) => {
+      try {
+        const { eventType, params } = data || {};
+        simulatorService.injectEvent(eventType, params);
+      } catch (err) {
+        socket.emit('simulator:error', { message: err.message });
       }
     });
 
@@ -49,36 +108,6 @@ function initCgmSocket(httpServer, corsOrigin, simulatorService) {
 }
 
 /**
- * Broadcasts a reading to all connected Socket.IO clients.
- */
-function broadcastReading(reading) {
-  if (ioInstance) {
-    ioInstance.emit('cgm:reading', reading);
-    if (reading && reading.deviceId) {
-      ioInstance.to(`device:${reading.deviceId}`).emit('cgm:reading', reading);
-    }
-  }
-}
-
-/**
- * Broadcasts status updates.
- */
-function broadcastStatus(status) {
-  if (ioInstance) {
-    ioInstance.emit('cgm:status', status);
-  }
-}
-
-/**
- * Broadcasts event notifications.
- */
-function broadcastEvent(eventData) {
-  if (ioInstance) {
-    ioInstance.emit('cgm:event', eventData);
-  }
-}
-
-/**
  * Returns active Socket.IO server instance.
  * @returns {Server|null}
  */
@@ -87,10 +116,24 @@ function getIO() {
 }
 
 module.exports = {
-  initCgmSocket,
-  initSocket: initCgmSocket,
+  initSocket,
+  initCgmSocket: initSocket,
   getIO,
-  broadcastReading,
+  broadcastReading: (reading) => {
+    broadcastReading(reading);
+    rollingReadings.push(reading);
+    if (rollingReadings.length > 30) rollingReadings.shift();
+
+    // Generate and broadcast AI predictions
+    aiService.getPrediction(rollingReadings, [15, 30, 45], reading.persona || 'VP-01')
+      .then((pred) => {
+        broadcastPrediction(pred);
+      })
+      .catch((err) => {
+        console.warn('[Socket] Prediction error:', err.message);
+      });
+  },
   broadcastStatus,
-  broadcastEvent
+  broadcastEvent,
+  broadcastPrediction
 };
