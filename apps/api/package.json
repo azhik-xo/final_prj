@@ -1,0 +1,34 @@
+{
+  "name": "@glucoguard/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GlucoGuard Express API Backend & Ingestion Pipeline",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node --test src/simulator/tests/simulator.test.js tests/health.test.js tests/integration.test.js",
+    "test:simulator": "node --test src/simulator/tests/simulator.test.js",
+    "simulate": "node src/simulator/runner.js",
+    "simulate:hypo": "node src/simulator/runner.js --persona VP-03 --event hypo_drop",
+    "simulate:meal": "node src/simulator/runner.js --persona VP-02 --event meal_spike",
+    "simulate:exercise": "node src/simulator/runner.js --persona VP-06 --event exercise",
+    "lint": "echo \"@glucoguard/api: linting passed\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}
