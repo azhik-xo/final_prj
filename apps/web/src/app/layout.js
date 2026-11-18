@@ -54,6 +54,18 @@ export default function RootLayout({ children }) {
                 Workout Planner
               </Link>
               <Link 
+                href="/caregiver" 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-800 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-colors"
+              >
+                Caregiver Portal
+              </Link>
+              <Link 
+                href="/clinical" 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+              >
+                Doctor AGP
+              </Link>
+              <Link 
                 href="/emergency" 
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors"
               >

@@ -15,6 +15,7 @@ const cgmRoutes = require('./routes/cgm.routes');
 const dietRoutes = require('./routes/diet.routes');
 const activityRoutes = require('./routes/activity.routes');
 const alertRoutes = require('./routes/alert.routes');
+const clinicalRoutes = require('./routes/clinical.routes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/v1/cgm', cgmRoutes);
 app.use('/api/v1/diet', dietRoutes);
 app.use('/api/v1/activity', activityRoutes);
 app.use('/api/v1/alerts', alertRoutes);
+app.use('/api/v1/clinical', clinicalRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -55,7 +57,8 @@ app.get('/', (req, res) => {
     cgm: '/api/v1/cgm/history',
     diet: '/api/v1/diet/meals',
     activity: '/api/v1/activity/logs',
-    alerts: '/api/v1/alerts/active'
+    alerts: '/api/v1/alerts/active',
+    clinical: '/api/v1/clinical/patients'
   });
 });
 
