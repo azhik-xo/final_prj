@@ -24,6 +24,7 @@
 |---|---|---|---|---|---|
 | **`TASK-INT-01`** | **M2+M3** | Real-Time E2E Pipeline: MongoDB, Socket.IO Gateway & Interactive Next.js Dashboard | `TASK-M1-01` | **APPROVED** | Developer AI |
 | **`TASK-M4-FULL`** | **M4** | AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection | `TASK-INT-01` | **APPROVED** | Developer AI |
+| **`TASK-M3-SENIOR`** | **M3** | Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout | `TASK-INT-01` | **IN_REVIEW** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -54,6 +55,47 @@
 ---
 
 ## 3. Detailed Specifications for Active & Priority Tasks
+
+### `TASK-M3-SENIOR`: Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout
+- **Module:** M3 (Real-Time Patient Dashboard)
+- **Status:** **`IN_REVIEW`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-INT-01`, `TASK-M4-FULL`
+- **Architectural Reference:** `ADR-008`
+- **Description:**  
+  Develop a dedicated, high-contrast, elder-friendly accessibility interface for the Patient Dashboard:
+  1. **Mode Switcher in Patient Dashboard (`apps/web/src/app/page.js`):**
+     - Add a clean header toggle: "Clinical View" vs "Senior Care View".
+     - Persist choice in browser `localStorage` (default to active mode or senior mode when toggled).
+  2. **Dedicated Component `apps/web/src/components/SeniorGlucoseView.jsx`:**
+     - **Gigantic Sugar Metric:** Bold 72px–80px glucose number with high-contrast text and colored halo.
+     - **Clear Plain-Language Status:**
+       * $<70$ mg/dL: Crimson red alert: *"LOW SUGAR WARNING — HAVE JUICE OR SWEETS NOW"*
+       * $70–180$ mg/dL: Emerald green: *"YOUR SUGAR IS HEALTHY & SAFE"*
+       * $>180$ mg/dL: Amber alert: *"HIGH SUGAR ALERT — DRINK WATER & REST"*
+     - **Visual Traffic Light Gauge Bar:** 3-segment horizontal bar (Low, Safe Target, High) with an intuitive position marker for visual clarity without complex graph axes.
+     - **Plain-Language Trend Indicator:**
+       * Replacing derivative rate numbers with human sentences: *"Sugar is calm and steady"*, *"Sugar dropping quickly"*, or *"Sugar rising after food"*.
+     - **Web Speech Audio Readout (Text-to-Speech):**
+       * One-touch button with `Volume2` icon (*"Listen to Sugar Status"*).
+       * Utilizes native `window.speechSynthesis` to speak: *"Your current glucose is 125 milligrams per deciliter. Your sugar is in the healthy safe zone and currently steady."*
+     - **Actionable Guidance Card ("What Should I Do Right Now?"):**
+       * 3 clear, numbered steps tailored to current status (e.g. hydrate, rest, 15g fast-acting carbs if low).
+     - **Simplified AI Forecast Summary:**
+       * Translates complex multi-horizon curves into clear conversational guidance (e.g. *"AI Forecast: Sugar projected to stay safe around 130 mg/dL over the next 30 minutes"*).
+     - **One-Touch Caregiver SOS / Help Card:**
+       * Caregiver contact card: *"Primary Contact: Sarah (Daughter) · Call +91 98765 43210"* with quick call action.
+  3. **Strict Non-Emoji Rule:**
+     - Use ONLY Lucide React icons (`Volume2`, `VolumeX`, `Phone`, `ShieldCheck`, `AlertCircle`, `CheckCircle2`, `ArrowUp`, `ArrowDown`, `Minus`, `Heart`, `Info`, `SlidersHorizontal`, `Eye`).
+  4. **Verification & Tests:**
+     - Add unit tests in `apps/web/tests/page.test.js` or `tests/seniorView.test.js` verifying senior view toggle, speech synthesis trigger fallback, and plain-language interpretations.
+- **Acceptance Criteria:**
+  1. Toggle smoothly switches between Clinical View and Senior View without full page reload.
+  2. Senior View displays giant typography (minimum 64px for glucose value).
+  3. Plain-language status and action checklist reflect real-time glucose values correctly.
+  4. Voice readout triggers `speechSynthesis.speak` with correct clinical message.
+  5. Zero emojis in source code.
+  6. All Jest frontend tests and Next.js production builds pass.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)
@@ -166,7 +208,7 @@
 
 ### `TASK-M0-01`: Monorepo Workspace Initialization & Tooling Setup
 - **Module:** M0 (Foundation / Infrastructure)
-- **Status:** **`READY`**
+- **Status:** **`APPROVED`**
 - **Assignee:** Developer AI
 - **Dependencies:** None
 - **Description:**  

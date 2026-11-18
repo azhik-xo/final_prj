@@ -13,6 +13,7 @@ This document formalizes the key architectural, technical, and safety decisions 
 - [ADR-005: AI Service Decoupling and Baseline Modeling Strategy](#adr-005-ai-service-decoupling-and-baseline-modeling-strategy)
 - [ADR-006: Emergency Response Two-Tier Escalation and SOS Simulation](#adr-006-emergency-response-two-tier-escalation-and-sos-simulation)
 - [ADR-007: Clinical Safety Boundaries and Non-Device Disclaimer Policy](#adr-007-clinical-safety-boundaries-and-non-device-disclaimer-policy)
+- [ADR-008: Senior & Geriatric Accessibility UX Protocol](#adr-008-senior--geriatric-accessibility-ux-protocol)
 
 ---
 
@@ -123,4 +124,25 @@ This document formalizes the key architectural, technical, and safety decisions 
 - **Trade-offs:**  
   *Pros:* Absolute ethical, legal, and academic safety compliance.  
   *Cons:* Explicitly limits scope to simulation and educational demonstration.
+
+---
+
+### ADR-008: Senior & Geriatric Accessibility UX Protocol
+- **Status:** **APPROVED**
+- **Date:** 2026-11-18
+- **Context:**  
+  Continuous glucose monitoring dashboards designed for clinicians or younger tech-literate patients contain complex time-series coordinate charts, calculus velocity notation ($dG/dt$), and multi-step regression statistics ($R^2$, MAE, RMSE). Geriatric and visually impaired patients face significant cognitive and sensory barriers interpreting these numbers, potentially leading to anxiety or missed critical glycemic events.
+- **Decision:**  
+  Introduce a first-class, accessible **Senior / Easy-Care Mode** on the Patient Dashboard:
+  1. *Dual Display Modality:* Persistent, high-contrast toggle between **Clinical View** (full telemetry graphs, multi-horizon AI CI bounds, velocity) and **Senior View** (simplified, plain language, giant typography).
+  2. *Plain-Language Translations:* Convert rate of change and category codes into unambiguous, reassuring vernacular (e.g. *"Sugar is steady & safe"*, *"Sugar dropping quickly — have juice now"*).
+  3. *Giant High-Contrast Typography:* Primary interstitial reading displayed in 72px+ bold font with WCAG AAA compliant contrast ratios.
+  4. *Visual Traffic Light Gauge:* Replace coordinate graphs with a 3-zone color-coded status bar (Red: Too Low, Green: Safe Zone, Amber: Too High) and an intuitive pointer.
+  5. *Audio Readout (Text-to-Speech):* Integrated browser Web Speech API (`speechSynthesis`) allowing one-touch audio narration of glucose status and immediate instructions.
+  6. *Immediate Actionable Checklist ("What Should I Do Right Now?"):* Clear 3-step numbered guidance tailored to the patient's current glycemic status.
+  7. *One-Touch Caregiver SOS / Help Call:* Clear simulated emergency contact action card.
+  8. *Visual Design Rule:* Strictly use Lucide React icons, zero emojis, clean clinical SaaS layout.
+- **Trade-offs:**  
+  *Pros:* Significantly enhances digital inclusion, reduces patient cognitive strain, and provides life-saving clarity for elder users.  
+  *Cons:* Requires maintaining two complementary layout templates in the frontend.
 

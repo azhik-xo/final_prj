@@ -7,11 +7,15 @@ import {
   WifiOff, 
   AlertTriangle, 
   Activity, 
-  Radio
+  Radio,
+  SlidersHorizontal,
+  HeartHandshake,
+  X
 } from 'lucide-react';
 import MetricCards from '../components/MetricCards';
 import GlucoseChart from '../components/GlucoseChart';
 import AIPredictionCard from '../components/AIPredictionCard';
+import SeniorGlucoseView from '../components/SeniorGlucoseView';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
@@ -25,8 +29,26 @@ export default function PatientDashboard() {
   const [aiPrediction, setAiPrediction] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
+  const [viewMode, setViewMode] = useState('clinical'); // 'clinical' | 'senior'
 
   const socketRef = useRef(null);
+
+  // Restore saved view mode preference from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('glucoguard_view_mode');
+      if (savedMode === 'senior' || savedMode === 'clinical') {
+        setViewMode(savedMode);
+      }
+    }
+  }, []);
+
+  const handleToggleView = (mode) => {
+    setViewMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('glucoguard_view_mode', mode);
+    }
+  };
 
   // Show transient notification
   const showFeedback = useCallback((msg, type = 'info') => {
@@ -181,6 +203,38 @@ export default function PatientDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* View Mode Toggle Switch (TASK-M3-SENIOR) */}
+            <div className="inline-flex rounded-xl border border-slate-300 p-1 bg-slate-100 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => handleToggleView('clinical')}
+                data-testid="toggle-clinical-view"
+                aria-pressed={viewMode === 'clinical'}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'clinical'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Clinical View</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleView('senior')}
+                data-testid="toggle-senior-view"
+                aria-pressed={viewMode === 'senior'}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'senior'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <HeartHandshake className="w-3.5 h-3.5" />
+                <span>Senior Care View</span>
+              </button>
+            </div>
+
             {/* Real-time Socket Connection Badge */}
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-2xs ${
               socketConnected
@@ -223,30 +277,41 @@ export default function PatientDashboard() {
               : 'bg-blue-50 text-blue-800 border-blue-200'
           }`}>
             <span>{feedbackMessage.text}</span>
-            <button type="button" onClick={() => setFeedbackMessage(null)} className="text-slate-400 hover:text-slate-600 ml-4 font-bold">
-              ×
+            <button type="button" onClick={() => setFeedbackMessage(null)} aria-label="Dismiss message" className="text-slate-400 hover:text-slate-600 ml-4 font-bold">
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </div>
 
-      {/* 1. Clinical Metric Cards Display */}
-      <MetricCards
-        reading={latestReading}
-        readings={readings}
-        persona={activePersona}
-        isConnected={socketConnected}
-      />
+      {/* Conditionally Render Senior Care View or Clinical Telemetry View */}
+      {viewMode === 'senior' ? (
+        <SeniorGlucoseView
+          reading={latestReading}
+          prediction={aiPrediction}
+          persona={activePersona}
+        />
+      ) : (
+        <>
+          {/* 1. Clinical Metric Cards Display */}
+          <MetricCards
+            reading={latestReading}
+            readings={readings}
+            persona={activePersona}
+            isConnected={socketConnected}
+          />
 
-      {/* 2. AI Predictive Early-Warning & Multi-Step Forecast Card (TASK-M4-FULL) */}
-      <AIPredictionCard prediction={aiPrediction} />
+          {/* 2. AI Predictive Early-Warning & Multi-Step Forecast Card (TASK-M4-FULL) */}
+          <AIPredictionCard prediction={aiPrediction} />
 
-      {/* 3. Interactive Real-Time Recharts Line Graph with AI Forecast Extension */}
-      <GlucoseChart
-        readings={readings}
-        predictions={aiPrediction?.predictions || []}
-        maxPoints={50}
-      />
+          {/* 3. Interactive Real-Time Recharts Line Graph with AI Forecast Extension */}
+          <GlucoseChart
+            readings={readings}
+            predictions={aiPrediction?.predictions || []}
+            maxPoints={50}
+          />
+        </>
+      )}
 
       {/* Clinical Disclaimer Callout per ADR-007 */}
       <div className="mt-8 bg-amber-50 rounded-2xl border border-amber-200 p-6 text-amber-900 text-xs leading-relaxed mb-6 shadow-2xs">

@@ -364,7 +364,7 @@ describe('Module M1: SimulatorEngine Controller & Telemetry Contract', () => {
     assert.equal(event.activeEvent, 'hypo_drop');
 
     // Step several times to simulate rapid descent
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 25; i++) {
       engine.tick();
     }
 
