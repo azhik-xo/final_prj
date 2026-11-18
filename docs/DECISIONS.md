@@ -14,6 +14,7 @@ This document formalizes the key architectural, technical, and safety decisions 
 - [ADR-006: Emergency Response Two-Tier Escalation and SOS Simulation](#adr-006-emergency-response-two-tier-escalation-and-sos-simulation)
 - [ADR-007: Clinical Safety Boundaries and Non-Device Disclaimer Policy](#adr-007-clinical-safety-boundaries-and-non-device-disclaimer-policy)
 - [ADR-008: Senior & Geriatric Accessibility UX Protocol](#adr-008-senior--geriatric-accessibility-ux-protocol)
+- [ADR-009: Nutritional Glycemic Impact Modeling and Diet Planning Safety Protocol](#adr-009-nutritional-glycemic-impact-modeling-and-diet-planning-safety-protocol)
 
 ---
 
@@ -145,4 +146,26 @@ This document formalizes the key architectural, technical, and safety decisions 
 - **Trade-offs:**  
   *Pros:* Significantly enhances digital inclusion, reduces patient cognitive strain, and provides life-saving clarity for elder users.  
   *Cons:* Requires maintaining two complementary layout templates in the frontend.
+
+---
+
+### ADR-009: Nutritional Glycemic Impact Modeling and Diet Planning Safety Protocol
+- **Status:** **APPROVED**
+- **Date:** 2026-11-18
+- **Context:**  
+  Module M5 (AI Diet Planner) must predict post-prandial glycemic impact $\Delta G$ based on macronutrient composition (net carbohydrates, dietary fiber, protein, fat) and Glycemic Index (GI). However, diabetes nutrition guidance carries clinical risks: inaccurate modeling or unauthorized insulin dosage suggestions could lead to medical harm or regulatory non-compliance.
+- **Decision:**  
+  1. *Pharmacokinetic-Informed Glycemic Excursion Model:*  
+     Implement a deterministic, physiologically grounded post-prandial predictor in `services/ai-engine/models/diet_analyzer.py`:
+     $$\Delta G_{\text{peak}} = (\text{Net Carbs} \times \text{GI Factor}) - (\text{Fiber} \times 0.5) + (\text{Fat/Protein buffering})$$
+     Clamped within physiologically realistic bounds ($+0$ to $+150$ mg/dL excursion, peak at $30–75$ min).
+  2. *Diabetic-Plate Preset Nutritional Database:*  
+     Curate verified reference foods (oatmeal, brown rice bowl, grilled chicken salad, lentils/dosa, white bread, sugar sodas) with standardized carb/protein/fat/fiber counts and GI categories.
+  3. *Strict Non-Prescription Safety Boundary (Non-Negotiable):*  
+     Under NO circumstances will the system compute or advise insulin-to-carb ratios (ICR), correction boluses, or drug doses. Recommendations are strictly educational dietary swaps (e.g. low-GI substitutions, portion timing, fiber enrichment).
+  4. *Simulation & Clinical Disclaimer:*  
+     Every API response and frontend view must feature prominent simulation notices and advice to consult certified diabetes educators or endocrinologists.
+- **Trade-offs:**  
+  *Pros:* Transparent, explainable metabolic impact forecasting without clinical liability.  
+  *Cons:* Cannot replace individualized clinical insulin bolus calculators.
 

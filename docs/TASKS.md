@@ -27,6 +27,7 @@
 | **`TASK-M3-SENIOR`** | **M3** | Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout | `TASK-INT-01` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **APPROVED** | Developer AI |
+| **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **READY** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -174,6 +175,56 @@
   3. `speechSynthesis.onvoiceschanged` is properly listened to and cached.
   4. Chrome audio suspension is prevented with `resume()`.
   5. All tests pass with zero regressions.
+
+### `TASK-M5-FULL`: AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps
+- **Module:** M5 (AI Diet Planner)
+- **Status:** **`READY`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M4-FULL`
+- **Architectural Reference:** `ADR-007`, `ADR-009`
+- **Description:**  
+  Develop end-to-end nutritional management and meal-impact forecasting across the monorepo:
+  1. **FastAPI AI Engine Submodule (`services/ai-engine/models/diet_analyzer.py`):**
+     - Reference food database of common diabetic-plate items with macronutrients (Net Carbs, Protein, Fat, Fiber, Glycemic Index category).
+     - Deterministic physiological excursion estimator:
+       * Estimated peak excursion $\Delta G_{\text{peak}} = (\text{Net Carbs} \times \text{GI Factor}) - (\text{Fiber} \times 0.5) + (\text{Fat/Protein delay factor})$.
+       * Estimated peak time: Low GI ($60–75$ min), Med GI ($45–60$ min), High GI ($30–45$ min).
+       * Post-meal trajectory projection curve ($0$ to $120$ min).
+       * Intelligent low-GI healthy alternatives / swaps generator (e.g. White Rice $\rightarrow$ Quinoa / Brown Rice, Soda $\rightarrow$ Infused Sparkling Water).
+     - Endpoints in `services/ai-engine/routes/diet_routes.py`:
+       * `POST /api/v1/ai/diet/analyze`: Predicts glycemic spike from meal ingredients.
+       * `GET /api/v1/ai/diet/foods`: Returns reference food library with macros.
+       * `GET /api/v1/ai/diet/recommendations`: Recommends diabetic-safe swaps and snack ideas.
+  2. **Express Backend Endpoints & Persistence (`apps/api`):**
+     - Mongoose schema `apps/api/src/models/meal.model.js`:
+       * Fields: `userId`, `name`, `mealType` (breakfast/lunch/dinner/snack), `carbs`, `protein`, `fat`, `fiber`, `glycemicIndex`, `calories`, `estimatedSpikeMgDl`, `source` ("simulation"), `timestamp`.
+     - Controller & Routes in `apps/api/src/routes/diet.routes.js` mounted at `/api/v1/diet`:
+       * `POST /api/v1/diet/meals`: Logs meal, queries AI engine for spike prediction, persists in MongoDB, and emits `cgm:event` with `meal_spike` simulation bridge.
+       * `GET /api/v1/diet/meals`: Returns logged meals for patient.
+       * `GET /api/v1/diet/recommendations`: Returns AI meal swaps.
+  3. **Next.js Web UI (`apps/web/src/app/diet/page.js`):**
+     - Top navigation link "Diet Planner" in `apps/web/src/app/layout.js`.
+     - Interactive Meal Logger:
+       * 1-Click quick presets: (Oatmeal with Almonds, Brown Rice Bowl, Grilled Chicken Salad, Dosa with Sambar, White Bread with Jam, Sweet Soda).
+       * Custom meal entry modal/form.
+       * Real-time AI Glycemic Excursion Gauge: Displays predicted spike $\Delta G$ (e.g. "+42 mg/dL in 45 min") before eating!
+       * Macro distribution breakdown (Carbs, Protein, Fat, Fiber bar meters).
+       * Logged Meals Table/Cards with glycemic ratings.
+       * Diabetic Meal Swaps Card: shows lower-carb/lower-GI healthy alternatives.
+  4. **Strict Rules:**
+     - ZERO insulin dosage calculations or titration prescriptions (ADR-007).
+     - ZERO emojis in source code or UI (use Lucide React icons: `Utensils`, `Apple`, `Sparkles`, `Plus`, `Clock`, `Flame`, `ShieldAlert`, `CheckCircle2`, `ArrowRight`, `BookOpen`).
+     - Non-clinical simulation disclaimer prominent on all responses and views.
+  5. **Verification & Tests:**
+     - Python unit tests in `services/ai-engine/tests/test_diet_engine.py`.
+     - Node integration tests in `apps/api/tests/diet.test.js`.
+     - Jest component tests in `apps/web/tests/diet.test.js`.
+     - Next.js production build exits code 0.
+- **Acceptance Criteria:**
+  1. `POST /api/v1/diet/meals` validates input, computes estimated spike, and stores in MongoDB.
+  2. AI engine returns predictable, physiologically bounded excursions ($0–150$ mg/dL).
+  3. Web UI allows quick preset logging and custom logging with real-time predicted spike preview.
+  4. No emojis in code or UI; all unit and integration tests pass across all 3 stacks.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)
