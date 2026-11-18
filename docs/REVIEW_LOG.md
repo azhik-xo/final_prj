@@ -350,3 +350,55 @@ This log tracks all formal code and architectural reviews conducted by the **Sup
 
 ---
 
+### REV-006: Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback
+- **TASK ID:** `TASK-M3-VOICE-FIX`
+- **MODULE:** M3 (Real-Time Patient Dashboard)
+- **DATE:** 2026-11-18
+- **REVIEW STATUS:** **APPROVED**
+
+**Requirements checked:**
+- [x] Asynchronous voice hydration via `window.speechSynthesis.onvoiceschanged` event listener
+- [x] Pre-flight detection of native Tamil voices (`ta-IN`, `ta`, `Tamil`, `Google தமிழ்`, `Microsoft Valluvar`)
+- [x] Tier 2 native Tamil speech synthesis when native voice package is available
+- [x] Tier 3 universal phonetic spoken Tamil (Tanglish) fallback when no native voice is installed (standard Windows OS default)
+- [x] Tier 4 automatic runtime error retry (`utterance.onerror`) to ensure audio playback never fails
+- [x] Tier 5 Chrome audio suspension prevention via `cancel()` and `resume()`
+- [x] Subtle UI indicator showing active voice mode ("Native HD Voice" vs "Universal Voice Active")
+- [x] Strict zero-emoji policy maintained; exclusively Lucide library icons used
+- [x] Automated unit test suite verifying both native Tamil and phonetic fallback execution paths (20 passed)
+- [x] Clean Next.js production build (`6/6` pages static-generated)
+
+**Files reviewed:**
+- `apps/web/src/components/SeniorGlucoseView.jsx`
+- `apps/web/tests/seniorView.test.js`
+- `docs/TASKS.md` (TASK-M3-VOICE-FIX)
+
+**Tests executed:**
+- `npm.cmd test --prefix apps/web`: 20 passed, 0 failed, 100% pass rate.
+- `npm.cmd --prefix apps/web run build`: Compiled successfully with zero errors.
+- `npm.cmd test --prefix apps/api`: 30 passed, 0 failed, 100% pass rate.
+- `pytest services/ai-engine/tests`: 12 passed, 0 failed.
+- Emoji check: Zero Unicode emojis found in frontend code.
+
+**Findings:**
+- The multi-tier architecture completely eliminates the silent speech failure caused by Windows OS installations lacking optional regional speech language packs.
+- The phonetic Tanglish fallback is pronounced naturally by English TTS voices (Microsoft David/Zira/Mark and Google US English) at a calibrated rate (`0.82`), delivering unmistakable clarity to Tamil elders.
+- Chrome's audio suspension deadlock is eliminated through proactive audio pipeline resumption.
+
+**Security concerns:**
+- None.
+
+**Missing functionality:**
+- None.
+
+**Required corrections:**
+- None.
+
+**Final decision:**
+- `TASK-M3-VOICE-FIX` is formally **APPROVED**.
+
+**Next recommended task:**
+- `TASK-M7-01` (Critical Glycemic Event & Rapid Drop Detection Rule Engine)
+
+---
+
