@@ -17,6 +17,7 @@ This document formalizes the key architectural, technical, and safety decisions 
 - [ADR-009: Nutritional Glycemic Impact Modeling and Diet Planning Safety Protocol](#adr-009-nutritional-glycemic-impact-modeling-and-diet-planning-safety-protocol)
 - [ADR-010: Physical Activity Glycemic Modeling & Clinical Safety Interlocks Protocol](#adr-010-physical-activity-glycemic-modeling--clinical-safety-interlocks-protocol)
 - [ADR-011: Emergency Detection, Multi-Stage Escalation Protocol & Simulated SOS Dispatch](#adr-011-emergency-detection-multi-stage-escalation-protocol--simulated-sos-dispatch)
+- [ADR-012: Multi-Role Clinical Oversight Architecture & Ambulatory Glucose Profile (AGP) Standard](#adr-012-multi-role-clinical-oversight-architecture--ambulatory-glucose-profile-agp-standard)
 
 ---
 
@@ -225,3 +226,38 @@ This document formalizes the key architectural, technical, and safety decisions 
 - **Trade-offs:**  
   *Pros:* Realistic, high-impact demonstration of clinical closed-loop emergency response without safety liabilities.  
   *Cons:* Requires simulated caregiver and ambulance dispatch mock state.
+
+---
+
+### ADR-012: Multi-Role Clinical Oversight Architecture & Ambulatory Glucose Profile (AGP) Standard
+- **Status:** **APPROVED**
+- **Date:** 2026-11-18
+- **Context:**  
+  Module M8 provides specialized interfaces for secondary stakeholders: family caregivers and endocrinologists/clinicians. Caregivers need continuous remote visibility into patient glycemic stability and emergency notifications. Clinicians require standardized, evidence-based reporting conforming to the international consensus on Ambulatory Glucose Profile (AGP) analysis (Battelino et al., Diabetes Care 2019), including Time-in-Range (TIR) targets, Glycemic Variability ($CV$), and Glucose Management Indicator ($GMI$).
+- **Decision:**  
+  1. *Role-Based Multi-Stakeholder Modalities:*  
+     - Provide dedicated, specialized views for:
+       * **Caregiver Portal (`/caregiver`):** Patient roster, real-time glycemic status cards, active emergency alerts, and caregiver acknowledgment.
+       * **Doctor / Clinical AGP Portal (`/doctor`):** Comprehensive AGP clinical summary, standard TIR targets, percentile curves, and physician consultation notes.
+  2. *Standard Clinical Metrics & AGP Algorithms:*  
+     - **Time-in-Range (TIR):**
+       * In Range ($70–180$ mg/dL): Clinical Target $>70\%$.
+       * Below Range ($54–69$ mg/dL): Clinical Target $<4\%$.
+       * Very Low ($<54$ mg/dL): Clinical Target $<1\%$.
+       * Above Range ($181–250$ mg/dL): Clinical Target $<25\%$.
+       * Very High ($>250$ mg/dL): Clinical Target $<5\%$.
+     - **Glycemic Variability ($CV$):**
+       $$CV = \left(\frac{\sigma}{\mu}\right) \times 100\% \quad (\text{Target } \le 36\%)$$
+     - **Glucose Management Indicator ($GMI$ / est. HbA1c):**
+       $$GMI = 3.31 + 0.02392 \times \mu \quad (\text{in } \%)$$
+     - **Percentile Modal Distribution:**
+       Calculates 10th, 25th, 50th (median), 75th, and 90th percentiles across time of day.
+  3. *Physician Consultation Notes & Caregiver Acknowledgment:*  
+     - Mongoose schema `ClinicalNote` storing physician observations, treatment recommendations (educational lifestyle/diet only, strictly no drug/insulin titration), and consultation timestamps.
+  4. *Strict Non-Prescription & Simulation Safeguards:*  
+     - No insulin dosage calculation or prescription advice (ADR-007).
+     - Mandatory `"source": "simulation"` on all AGP payloads and clinical models.
+     - Strictly zero emojis in code or UI; exclusively Lucide React icons (`Stethoscope`, `Users`, `Activity`, `FileText`, `CheckCircle2`, `AlertTriangle`, `HeartPulse`, `Clock`, `ShieldAlert`, `Download`, `TrendingUp`, `Plus`).
+- **Trade-offs:**  
+  *Pros:* Aligns with global endocrinology guidelines (ADA/EASD consensus) and demonstrates true multi-stakeholder hospital-grade utility.  
+  *Cons:* AGP calculations require sufficient simulated reading density for statistical validity.

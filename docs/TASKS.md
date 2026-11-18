@@ -29,7 +29,8 @@
 | **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **APPROVED** | Developer AI |
 | **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **APPROVED** | Developer AI |
 | **`TASK-M6-FULL`** | **M6** | AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine | `TASK-M5-FULL` | **APPROVED** | Developer AI |
-| **`TASK-M7-FULL`** | **M7** | Emergency Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch | `TASK-M6-FULL` | **IN_REVIEW** | Developer AI |
+| **`TASK-M7-FULL`** | **M7** | Emergency Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch | `TASK-M6-FULL` | **APPROVED** | Developer AI |
+| **`TASK-M8-FULL`** | **M8** | Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report | `TASK-M7-FULL` | **READY** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -284,7 +285,7 @@
 
 ### `TASK-M7-FULL`: Emergency Detection and Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch
 - **Module:** M7 (Emergency Response Engine)
-- **Status:** **`IN_REVIEW`**
+- **Status:** **`APPROVED`**
 - **Assignee:** Developer AI
 - **Dependencies:** `TASK-M6-FULL`
 - **Architectural Reference:** `ADR-006`, `ADR-007`, `ADR-011`
@@ -358,6 +359,56 @@
   4. Expiry of countdown triggers simulated Caregiver Alert and simulated Ambulance SOS dispatch with simulated GPS map tracking.
   5. Emergency Hub route `/emergency` provides manual trigger testing, live escalation tracking, and incident history.
   6. Zero emojis across all new frontend files; all test suites pass.
+
+### `TASK-M8-FULL`: Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report
+- **Module:** M8 (Caregiver & Doctor Clinical Portal)
+- **Status:** **`READY`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M7-FULL`
+- **Architectural Reference:** `ADR-007`, `ADR-012`
+- **Description:**  
+  Implement the multi-stakeholder clinical oversight platform for family caregivers and endocrinologists:
+  1. **Backend Clinical & Caregiver Service (`apps/api`):**
+     - Mongoose Schema `apps/api/src/models/clinicalNote.model.js`:
+       * Fields: `patientId`, `doctorName`, `noteType` (`routine_review`, `urgent_consult`, `therapy_adjustment`), `assessment`, `recommendations` (strictly lifestyle/diet/hydration educational guidance; no insulin titration), `source: "simulation"`, `timestamp`.
+     - Controller & Routes in `apps/api/src/routes/clinical.routes.js` mounted at `/api/v1/clinical`:
+       * `GET /api/v1/clinical/patients`: Returns all monitored clinical personas (VP-01 through VP-06) with live simulated status, current glucose, risk tier, trend arrow, and active emergency status.
+       * `GET /api/v1/clinical/agp/:patientId`: Computes international consensus standard AGP metrics:
+         - Time-in-Range percentages: In Range ($70–180$ mg/dL), High ($181–250$ mg/dL), Very High ($>250$ mg/dL), Low ($54–69$ mg/dL), Very Low ($<54$ mg/dL).
+         - Glycemic Variability ($CV = SD / \text{Mean} \times 100\%$, Target $\le 36\%$).
+         - Glucose Management Indicator ($GMI = 3.31 + 0.02392 \times \text{Mean}$, in $\%$, estimated HbA1c).
+         - 24-hour percentile curve (10th, 25th, 50th median, 75th, 90th percentiles).
+       * `POST /api/v1/clinical/notes`: Save consultation note.
+       * `GET /api/v1/clinical/notes/:patientId`: Fetch consultation history for patient.
+       * `POST /api/v1/clinical/caregiver/acknowledge`: Caregiver remote acknowledgment for dependent patient.
+  2. **Next.js Web UI (`apps/web`):**
+     - Global Navigation Header updated with:
+       * "Caregiver Portal" pointing to `/caregiver`
+       * "Doctor / Clinical AGP" pointing to `/clinical`
+     - **Caregiver Portal Page (`apps/web/src/app/caregiver/page.js`):**
+       * Multi-patient live monitoring grid: cards for each patient with glucose badge, trend arrow, last reading time, and active alert pill.
+       * Urgent Caregiver Escalation Banner: Highlights any patient currently in Stage 2/3 emergency with a 1-click "Acknowledge as Caregiver" action.
+       * Caregiver quick contact shortcuts ("Call Patient", "Notify Dispatch").
+       * Recent glycemic events log across assigned dependents.
+     - **Doctor / Clinical AGP Portal (`apps/web/src/app/clinical/page.js`):**
+       * Patient selector (VP-01 through VP-06).
+       * Standard Ambulatory Glucose Profile (AGP) Clinical Report Card:
+         - Mean Glucose, GMI (est. HbA1c), Glycemic Variability $CV$ with clinical target indicators.
+         - 5-Tier Time-in-Range (TIR) stacked horizontal bar meter with ADA benchmark targets (Green $>70\%$, Amber $<25\%$, Red $<4\%$, Dark Red $<1\%$).
+         - Ambulatory Glucose Profile 24-Hour Percentile Curve chart (50th median line, 25th-75th IQR shading, 10th-90th outer range).
+         - Daily Glucose Heatmap / Modal Day Profile.
+         - Physician Consultation Notes log with interactive "Add Clinical Note" modal.
+         - Export/Print Report simulation button.
+  3. **Strict Rules & Safety Safeguards:**
+     - ZERO EMOJIS! Exclusively Lucide React library icons (`Stethoscope`, `Users`, `Activity`, `FileText`, `CheckCircle2`, `AlertTriangle`, `HeartPulse`, `Clock`, `ShieldAlert`, `Download`, `TrendingUp`, `Plus`, `Phone`, `Eye`).
+     - ZERO insulin titration prescriptions or drug dosages (ADR-007).
+     - Prominent non-device educational simulation disclaimer across all views.
+     - Unit & integration tests in `apps/api/tests/clinical.test.js` and `apps/web/tests/clinical.test.js`.
+- **Acceptance Criteria:**
+  1. Caregiver page `/caregiver` displays patient roster with live simulated metrics and lets caregiver remotely acknowledge emergency alerts.
+  2. Clinical page `/clinical` computes and displays standard AGP report: TIR bar with 5 zones, GMI, $CV$, and 24-hour percentile curve.
+  3. Doctor consultation notes can be authored, saved to MongoDB, and retrieved per patient.
+  4. 0 emojis across all new frontend files; all test suites pass; Next.js build exits code 0.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)
