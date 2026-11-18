@@ -208,6 +208,90 @@ describe('SeniorGlucoseView Component (ADR-008 & TASK-M3-SENIOR)', () => {
     const spokenUtterance = mockSpeak.mock.calls[0][0];
     expect(spokenUtterance.text).toMatch(/Your current glucose reading is 125 milligrams per deciliter/i);
     expect(spokenUtterance.text).toMatch(/healthy safe zone/i);
+    expect(spokenUtterance.lang).toBe('en-US');
+  });
+
+  it('supports bilingual voice selection between English and Tamil with localStorage persistence (TASK-M3-VOICE-TA)', () => {
+    localStorage.clear();
+
+    render(
+      <SeniorGlucoseView
+        reading={mockSafeReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    const enToggle = screen.getByTestId('toggle-voice-en');
+    const taToggle = screen.getByTestId('toggle-voice-ta');
+    const speechBtn = screen.getByTestId('senior-voice-readout-button');
+
+    expect(enToggle).toBeInTheDocument();
+    expect(taToggle).toBeInTheDocument();
+
+    // Default is English
+    expect(speechBtn).toHaveTextContent(/Listen to Sugar Status/i);
+
+    // Switch to Tamil
+    fireEvent.click(taToggle);
+
+    // Persisted in localStorage
+    expect(localStorage.getItem('glucoguard_voice_lang')).toBe('ta');
+
+    // Button label dynamically updates to Tamil
+    expect(speechBtn).toHaveTextContent(/சர்க்கரை அளவை தமிழில் கேட்க/i);
+
+    // Trigger voice readout in Tamil
+    fireEvent.click(speechBtn);
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    const tamilUtterance = mockSpeak.mock.calls[0][0];
+    expect(tamilUtterance.lang).toBe('ta-IN');
+    expect(tamilUtterance.rate).toBe(0.85);
+    expect(tamilUtterance.text).toContain('உங்கள் சர்க்கரை அளவு 125');
+    expect(tamilUtterance.text).toContain('பாதுகாப்பான அளவில் உள்ளது');
+    expect(tamilUtterance.text).toContain('சர்க்கரை அளவு சீராக உள்ளது');
+  });
+
+  it('speaks authentic clinical Tamil advice for hypoglycemia and hyperglycemia ranges (TASK-M3-VOICE-TA)', () => {
+    localStorage.setItem('glucoguard_voice_lang', 'ta');
+
+    const { rerender } = render(
+      <SeniorGlucoseView
+        reading={mockLowReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    const speechBtn = screen.getByTestId('senior-voice-readout-button');
+    fireEvent.click(speechBtn);
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    const lowUtterance = mockSpeak.mock.calls[0][0];
+    expect(lowUtterance.lang).toBe('ta-IN');
+    expect(lowUtterance.text).toContain('எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (62)');
+    expect(lowUtterance.text).toContain('அரை டம்ளர் பழச்சாறு');
+    expect(lowUtterance.text).toContain('சர்க்கரை அளவு வேகமாக குறைகிறது');
+
+    mockSpeak.mockClear();
+
+    rerender(
+      <SeniorGlucoseView
+        reading={mockHighReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    fireEvent.click(speechBtn);
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    const highUtterance = mockSpeak.mock.calls[0][0];
+    expect(highUtterance.lang).toBe('ta-IN');
+    expect(highUtterance.text).toContain('கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (215)');
+    expect(highUtterance.text).toContain('தண்ணீர் குடிக்கவும்');
+    expect(highUtterance.text).toContain('சர்க்கரை அளவு வேகமாக உயர்கிறது');
   });
 
   it('renders conversational AI 30-minute outlook summary', () => {

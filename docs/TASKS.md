@@ -25,6 +25,7 @@
 | **`TASK-INT-01`** | **M2+M3** | Real-Time E2E Pipeline: MongoDB, Socket.IO Gateway & Interactive Next.js Dashboard | `TASK-M1-01` | **APPROVED** | Developer AI |
 | **`TASK-M4-FULL`** | **M4** | AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection | `TASK-INT-01` | **APPROVED** | Developer AI |
 | **`TASK-M3-SENIOR`** | **M3** | Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout | `TASK-INT-01` | **APPROVED** | Developer AI |
+| **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **IN_REVIEW** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -96,6 +97,48 @@
   4. Voice readout triggers `speechSynthesis.speak` with correct clinical message.
   5. Zero emojis in source code.
   6. All Jest frontend tests and Next.js production builds pass.
+
+### `TASK-M3-VOICE-TA`: Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine
+- **Module:** M3 (Real-Time Patient Dashboard)
+- **Status:** **`IN_REVIEW`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M3-SENIOR`
+- **Architectural Reference:** `ADR-008`
+- **Description:**  
+  Add optional Tamil audio voice readout (தமிழ் குரல்) to `SeniorGlucoseView.jsx` to make the continuous glucose monitoring accessible to elderly Tamil-speaking patients:
+  1. **Bilingual Voice Switcher in Senior View:**
+     - Add language switcher toggle: **"English"** vs **"தமிழ்" (Tamil)** with Lucide `Languages` icon.
+     - Persist voice language selection in `localStorage` (`glucoguard_voice_lang: 'en' | 'ta'`).
+  2. **Authentic Spoken Tamil Clinical Narration:**
+     - Map glucose status to clear, natural, respectful spoken Tamil:
+       * **Safe (70–180 mg/dL):** *"உங்கள் சர்க்கரை அளவு {val}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்."*
+       * **Low (<70 mg/dL):** *"எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது ({val}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்."*
+       * **Very Low (<54 mg/dL):** *"அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது ({val}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்."*
+       * **High (>180 mg/dL):** *"கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது ({val}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்."*
+       * **Very High (>250 mg/dL):** *"எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது ({val}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்."*
+     - Map trend directions to natural Tamil:
+       * Dropping fast: *"சர்க்கரை அளவு வேகமாக குறைகிறது."*
+       * Dropping slow: *"சர்க்கரை அளவு மெதுவாக குறைகிறது."*
+       * Steady: *"சர்க்கரை அளவு சீராக உள்ளது."*
+       * Rising slow: *"சர்க்கரை அளவு மெதுவாக உயர்கிறது."*
+       * Rising fast: *"சர்க்கரை அளவு வேகமாக உயர்கிறது."*
+  3. **TTS Audio Synthesis Engine:**
+     - When `voiceLang === 'ta'`:
+       * Set `utterance.lang = 'ta-IN'` (or `ta_IN` / `ta`).
+       * Search `window.speechSynthesis.getVoices()` for available Tamil voices (e.g. Google தமிழ், Microsoft Valluvar) and set `utterance.voice` if found.
+       * Set senior-friendly speaking pace (`utterance.rate = 0.85`).
+     - Button label dynamically updates:
+       * English: *"Listen to Sugar Status (Voice Readout)"*
+       * Tamil: *"சர்க்கரை அளவை தமிழில் கேட்க (Voice Readout)"*
+  4. **Strict Rules:**
+     - Zero emojis in UI or source code (use Lucide library icons: `Languages`, `Volume2`, `VolumeX`).
+  5. **Verification & Tests:**
+     - Update unit tests in `apps/web/tests/seniorView.test.js` to test Tamil voice toggle, `ta-IN` language setting, and Tamil utterance text.
+- **Acceptance Criteria:**
+  1. Language switcher toggles cleanly between English and Tamil.
+  2. Selecting Tamil sets `SpeechSynthesisUtterance.lang = 'ta-IN'` and generates the correct Tamil narration text.
+  3. Spoken Tamil phrases are grammatically natural, respectful, and clinically safe.
+  4. All Jest frontend tests pass and Next.js builds with exit code 0.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)

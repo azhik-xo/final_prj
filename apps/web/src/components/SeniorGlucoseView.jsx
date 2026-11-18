@@ -16,11 +16,12 @@ import {
   Clock,
   User,
   ShieldCheck,
-  Activity
+  Activity,
+  Languages
 } from 'lucide-react';
 
 /**
- * Categorizes glucose level into plain-language clinical status and visual tokens.
+ * Categorizes glucose level into plain-language clinical status, bilingual voice scripts, and visual tokens.
  * @param {number|null} glucose
  */
 function getSeniorGlucoseStatus(glucose) {
@@ -35,7 +36,8 @@ function getSeniorGlucoseStatus(glucose) {
       haloColor: 'ring-slate-200',
       badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
       icon: Clock,
-      voiceStatus: 'Connecting sensor. Stand by for your reading.'
+      voiceStatus: 'Connecting sensor. Stand by for your reading.',
+      voiceTamil: () => 'சென்சார் சர்க்கரை அளவை இணைக்கிறது. காத்திருக்கவும்.'
     };
   }
 
@@ -50,7 +52,8 @@ function getSeniorGlucoseStatus(glucose) {
       haloColor: 'ring-rose-400/40',
       badgeBg: 'bg-rose-600 text-white border-rose-700 animate-pulse',
       icon: AlertTriangle,
-      voiceStatus: 'Very low sugar warning! Your glucose is dangerously low. Please have sweet fruit juice or sugar immediately and sit down safely.'
+      voiceStatus: 'Very low sugar warning! Your glucose is dangerously low. Please have sweet fruit juice or sugar immediately and sit down safely.',
+      voiceTamil: (val) => `அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது (${val}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்.`
     };
   }
 
@@ -65,7 +68,8 @@ function getSeniorGlucoseStatus(glucose) {
       haloColor: 'ring-red-400/30',
       badgeBg: 'bg-red-600 text-white border-red-700',
       icon: AlertTriangle,
-      voiceStatus: 'Low sugar alert! Your glucose has dropped below normal. Please have half a cup of sweet juice or glucose tablets now and rest quietly.'
+      voiceStatus: 'Low sugar alert! Your glucose has dropped below normal. Please have half a cup of sweet juice or glucose tablets now and rest quietly.',
+      voiceTamil: (val) => `எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (${val}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்.`
     };
   }
 
@@ -80,7 +84,8 @@ function getSeniorGlucoseStatus(glucose) {
       haloColor: 'ring-emerald-400/25',
       badgeBg: 'bg-emerald-600 text-white border-emerald-700',
       icon: CheckCircle2,
-      voiceStatus: 'Your sugar is in the healthy safe zone. Keep up your normal routine and stay hydrated.'
+      voiceStatus: 'Your sugar is in the healthy safe zone. Keep up your normal routine and stay hydrated.',
+      voiceTamil: (val) => `உங்கள் சர்க்கரை அளவு ${val}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்.`
     };
   }
 
@@ -95,7 +100,8 @@ function getSeniorGlucoseStatus(glucose) {
       haloColor: 'ring-amber-400/30',
       badgeBg: 'bg-amber-600 text-white border-amber-700',
       icon: AlertCircle,
-      voiceStatus: 'High sugar alert. Your sugar is elevated. Please drink a glass of fresh water, avoid sweets, and rest quietly.'
+      voiceStatus: 'High sugar alert. Your sugar is elevated. Please drink a glass of fresh water, avoid sweets, and rest quietly.',
+      voiceTamil: (val) => `கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (${val}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்.`
     };
   }
 
@@ -109,12 +115,13 @@ function getSeniorGlucoseStatus(glucose) {
     haloColor: 'ring-rose-400/40',
     badgeBg: 'bg-rose-600 text-white border-rose-700 animate-pulse',
     icon: AlertCircle,
-    voiceStatus: 'Very high sugar alert. Your glucose is significantly high. Drink plenty of fresh water and notify your caregiver.'
+    voiceStatus: 'Very high sugar alert. Your glucose is significantly high. Drink plenty of fresh water and notify your caregiver.',
+    voiceTamil: (val) => `எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது (${val}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்.`
   };
 }
 
 /**
- * Plain-language trend interpreter without technical calculus symbols.
+ * Plain-language trend interpreter with bilingual narration text.
  * @param {number} rateOfChange
  * @param {string} trend
  */
@@ -127,7 +134,8 @@ function getSeniorTrend(rateOfChange, trend) {
       detail: 'Falling fast — keep juice or sweets nearby',
       icon: ArrowDown,
       iconColor: 'text-rose-600 bg-rose-100',
-      voiceText: 'Your sugar is dropping quickly.'
+      voiceText: 'Your sugar is dropping quickly.',
+      voiceTamil: 'சர்க்கரை அளவு வேகமாக குறைகிறது.'
     };
   }
   if (roc < -0.6) {
@@ -136,7 +144,8 @@ function getSeniorTrend(rateOfChange, trend) {
       detail: 'Gradual downward direction',
       icon: ArrowDown,
       iconColor: 'text-blue-600 bg-blue-100',
-      voiceText: 'Your sugar is going down slowly.'
+      voiceText: 'Your sugar is going down slowly.',
+      voiceTamil: 'சர்க்கரை அளவு மெதுவாக குறைகிறது.'
     };
   }
   if (roc <= 0.6) {
@@ -145,7 +154,8 @@ function getSeniorTrend(rateOfChange, trend) {
       detail: 'Stable without major changes',
       icon: Minus,
       iconColor: 'text-emerald-600 bg-emerald-100',
-      voiceText: 'Your sugar is calm and steady.'
+      voiceText: 'Your sugar is calm and steady.',
+      voiceTamil: 'சர்க்கரை அளவு சீராக உள்ளது.'
     };
   }
   if (roc <= 2.0) {
@@ -154,7 +164,8 @@ function getSeniorTrend(rateOfChange, trend) {
       detail: 'Gradual upward direction',
       icon: ArrowUp,
       iconColor: 'text-amber-600 bg-amber-100',
-      voiceText: 'Your sugar is rising slowly.'
+      voiceText: 'Your sugar is rising slowly.',
+      voiceTamil: 'சர்க்கரை அளவு மெதுவாக உயர்கிறது.'
     };
   }
   return {
@@ -162,7 +173,8 @@ function getSeniorTrend(rateOfChange, trend) {
     detail: 'Climbing quickly — sip water and relax',
     icon: ArrowUp,
     iconColor: 'text-amber-700 bg-amber-100',
-    voiceText: 'Your sugar is rising rapidly after food or activity.'
+    voiceText: 'Your sugar is rising rapidly after food or activity.',
+    voiceTamil: 'சர்க்கரை அளவு வேகமாக உயர்கிறது.'
   };
 }
 
@@ -233,6 +245,24 @@ function getActionChecklist(category) {
 export default function SeniorGlucoseView({ reading, prediction, persona }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
+  const [voiceLang, setVoiceLang] = useState('en'); // 'en' | 'ta'
+
+  // Restore voice language preference from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('glucoguard_voice_lang');
+      if (savedLang === 'ta' || savedLang === 'en') {
+        setVoiceLang(savedLang);
+      }
+    }
+  }, []);
+
+  const handleToggleVoiceLang = (lang) => {
+    setVoiceLang(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('glucoguard_voice_lang', lang);
+    }
+  };
 
   const glucose = reading ? reading.glucose : null;
   const roundedGlucose = glucose !== null ? Math.round(glucose) : null;
@@ -275,7 +305,7 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
     return ((clamped - 40) / (300 - 40)) * 100;
   }, [glucose]);
 
-  // Web Speech API Readout
+  // Web Speech API Readout with Bilingual Support (English & தமிழ்)
   const handleSpeak = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       alert('Speech synthesis is not supported on this browser.');
@@ -288,17 +318,44 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
       return;
     }
 
-    const glucosePhrase = roundedGlucose !== null
-      ? `Your current glucose reading is ${roundedGlucose} milligrams per deciliter.`
-      : 'Sensor reading is currently standing by.';
+    let textToSpeak = '';
+    let langCode = 'en-US';
+    let rate = 0.88;
 
-    const textToSpeak = `${glucosePhrase} ${status.voiceStatus} ${trend.voiceText} ${checklist[0].title}: ${checklist[0].text}`;
+    if (voiceLang === 'ta') {
+      langCode = 'ta-IN';
+      rate = 0.85; // Calibrated for natural elder Tamil comprehension
+      const val = roundedGlucose !== null ? `${roundedGlucose}` : '';
+      const tamilStatusText = status.voiceTamil ? status.voiceTamil(val) : '';
+      const tamilTrendText = trend.voiceTamil || '';
+      textToSpeak = `${tamilStatusText} ${tamilTrendText}`.trim();
+    } else {
+      const glucosePhrase = roundedGlucose !== null
+        ? `Your current glucose reading is ${roundedGlucose} milligrams per deciliter.`
+        : 'Sensor reading is currently standing by.';
+      textToSpeak = `${glucosePhrase} ${status.voiceStatus} ${trend.voiceText} ${checklist[0].title}: ${checklist[0].text}`;
+    }
 
     try {
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 0.88; // Slightly slower pace for seniors
+      utterance.rate = rate;
       utterance.pitch = 1.0;
-      utterance.lang = 'en-US';
+      utterance.lang = langCode;
+
+      if (voiceLang === 'ta' && typeof window !== 'undefined' && window.speechSynthesis) {
+        const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+        const tamilVoice = voices.find(
+          (v) =>
+            v.lang === 'ta-IN' ||
+            v.lang === 'ta_IN' ||
+            v.lang?.startsWith('ta') ||
+            v.name?.includes('Tamil') ||
+            v.name?.includes('தமிழ்')
+        );
+        if (tamilVoice) {
+          utterance.voice = tamilVoice;
+        }
+      }
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
@@ -309,7 +366,7 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
       console.warn('Speech synthesis failed:', e);
       setIsSpeaking(false);
     }
-  }, [roundedGlucose, status.voiceStatus, trend.voiceText, checklist]);
+  }, [roundedGlucose, status, trend, checklist, voiceLang]);
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {
@@ -442,8 +499,8 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
           </div>
         </div>
 
-        {/* 4. Plain-Language Trend & Audio Voice Readout Bar */}
-        <div className="mt-8 p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* 4. Plain-Language Trend & Bilingual Audio Voice Readout Bar (TASK-M3-VOICE-TA) */}
+        <div className="mt-8 p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${trend.iconColor}`}>
               <TrendIcon className="w-6 h-6" />
@@ -461,30 +518,75 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
             </div>
           </div>
 
-          {/* Large Audio Voice Readout Button */}
-          <button
-            type="button"
-            onClick={handleSpeak}
-            data-testid="senior-voice-readout-button"
-            aria-label="Listen to your current sugar reading and advice spoken aloud"
-            className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-sm hover:shadow transition-all ${
-              isSpeaking
-                ? 'bg-rose-600 hover:bg-rose-700 text-white ring-4 ring-rose-200'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white ring-4 ring-indigo-100'
-            }`}
-          >
-            {isSpeaking ? (
-              <>
-                <VolumeX className="w-5 h-5 shrink-0" />
-                <span>Stop Audio Voice</span>
-              </>
-            ) : (
-              <>
-                <Volume2 className="w-5 h-5 shrink-0" />
-                <span>Listen to Sugar Status (Voice Readout)</span>
-              </>
-            )}
-          </button>
+          {/* Bilingual Voice Switcher & Large Audio Readout Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Language toggle: English vs தமிழ் */}
+            <div className="inline-flex rounded-2xl border border-slate-300 p-1 bg-white shadow-2xs items-center">
+              <div className="px-2 text-slate-500 flex items-center gap-1.5 text-xs font-semibold">
+                <Languages className="w-4 h-4 text-indigo-600" />
+                <span className="hidden sm:inline">Voice:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleVoiceLang('en')}
+                data-testid="toggle-voice-en"
+                aria-pressed={voiceLang === 'en'}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  voiceLang === 'en'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleVoiceLang('ta')}
+                data-testid="toggle-voice-ta"
+                aria-pressed={voiceLang === 'ta'}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  voiceLang === 'ta'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                தமிழ் (Tamil)
+              </button>
+            </div>
+
+            {/* Large Audio Voice Readout Button */}
+            <button
+              type="button"
+              onClick={handleSpeak}
+              data-testid="senior-voice-readout-button"
+              aria-label={
+                voiceLang === 'ta'
+                  ? 'சர்க்கரை அளவை தமிழில் கேட்க'
+                  : 'Listen to your current sugar reading and advice spoken aloud'
+              }
+              className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-sm hover:shadow transition-all ${
+                isSpeaking
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white ring-4 ring-rose-200'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white ring-4 ring-indigo-100'
+              }`}
+            >
+              {isSpeaking ? (
+                <>
+                  <VolumeX className="w-5 h-5 shrink-0" />
+                  <span>{voiceLang === 'ta' ? 'குரலை நிறுத்தவும்' : 'Stop Audio Voice'}</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-5 h-5 shrink-0" />
+                  <span>
+                    {voiceLang === 'ta'
+                      ? 'சர்க்கரை அளவை தமிழில் கேட்க (Voice Readout)'
+                      : 'Listen to Sugar Status (Voice Readout)'}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
