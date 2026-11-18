@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import SeniorGlucoseView from '../src/components/SeniorGlucoseView';
 import PatientDashboard from '../src/app/page';
 
@@ -22,16 +22,31 @@ jest.mock('socket.io-client', () => {
 describe('SeniorGlucoseView Component (ADR-008 & TASK-M3-SENIOR)', () => {
   let mockSpeak;
   let mockCancel;
+  let mockResume;
+  let mockTamilVoice;
 
   beforeEach(() => {
     mockSpeak = jest.fn();
     mockCancel = jest.fn();
+    mockResume = jest.fn();
 
-    // Mock Web Speech API in JSDOM
+    mockTamilVoice = {
+      name: 'Google தமிழ்',
+      lang: 'ta-IN',
+      default: false,
+      localService: true,
+      voiceURI: 'Google தமிழ்'
+    };
+
+    // Mock Web Speech API in JSDOM with default native Tamil voice available
     window.speechSynthesis = {
       speak: mockSpeak,
       cancel: mockCancel,
+      resume: mockResume,
       speaking: false,
+      paused: false,
+      getVoices: jest.fn(() => [mockTamilVoice]),
+      onvoiceschanged: null,
     };
 
     // Mock SpeechSynthesisUtterance constructor
@@ -292,6 +307,89 @@ describe('SeniorGlucoseView Component (ADR-008 & TASK-M3-SENIOR)', () => {
     expect(highUtterance.text).toContain('கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (215)');
     expect(highUtterance.text).toContain('தண்ணீர் குடிக்கவும்');
     expect(highUtterance.text).toContain('சர்க்கரை அளவு வேகமாக உயர்கிறது');
+  });
+
+  it('falls back to universal phonetic Tanglish speech synthesis when no native Tamil voice is found in the OS (TASK-M3-VOICE-FIX)', () => {
+    // Simulate Windows OS environment without a native Tamil voice
+    window.speechSynthesis.getVoices = jest.fn(() => [
+      { name: 'Microsoft David Desktop - English (United States)', lang: 'en-US' }
+    ]);
+    localStorage.setItem('glucoguard_voice_lang', 'ta');
+
+    render(
+      <SeniorGlucoseView
+        reading={mockSafeReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    // Verify mode badge reflects universal voice mode
+    const badge = screen.getByTestId('tamil-voice-mode-badge');
+    expect(badge).toHaveTextContent(/Universal Voice Active/i);
+
+    const speechBtn = screen.getByTestId('senior-voice-readout-button');
+    fireEvent.click(speechBtn);
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    const fallbackUtterance = mockSpeak.mock.calls[0][0];
+
+    // Uses platform default English voice engine with phonetic Tamil pronunciation
+    expect(fallbackUtterance.lang).toBe('en-US');
+    expect(fallbackUtterance.rate).toBe(0.82);
+    expect(fallbackUtterance.text).toContain('Ungal sugar alavu 125');
+    expect(fallbackUtterance.text).toContain('safe zone-il ulladhu');
+    expect(fallbackUtterance.text).toContain('Sugar calm and steady-aaga ulladhu');
+    expect(fallbackUtterance.text).toContain('Oru glass thanneer kudiyungal');
+  });
+
+  it('unpauses suspended Chrome speech synthesis pipeline and cancels previous queue (TASK-M3-VOICE-FIX)', () => {
+    window.speechSynthesis.paused = true;
+
+    render(
+      <SeniorGlucoseView
+        reading={mockSafeReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    const speechBtn = screen.getByTestId('senior-voice-readout-button');
+    fireEvent.click(speechBtn);
+
+    expect(mockCancel).toHaveBeenCalled();
+    expect(mockResume).toHaveBeenCalledTimes(1);
+  });
+
+  it('automatically retries with phonetic Tanglish speech when native Tamil speech throws an error (TASK-M3-VOICE-FIX)', () => {
+    localStorage.setItem('glucoguard_voice_lang', 'ta');
+
+    render(
+      <SeniorGlucoseView
+        reading={mockSafeReading}
+        prediction={mockPrediction}
+        persona={mockPersona}
+      />
+    );
+
+    const speechBtn = screen.getByTestId('senior-voice-readout-button');
+    fireEvent.click(speechBtn);
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    const nativeUtterance = mockSpeak.mock.calls[0][0];
+
+    // Simulate speech error (e.g. language-unavailable or synthesis failure in Chrome)
+    act(() => {
+      if (nativeUtterance.onerror) {
+        nativeUtterance.onerror({ error: 'language-unavailable' });
+      }
+    });
+
+    // Expect automatic fallback retry invocation
+    expect(mockSpeak).toHaveBeenCalledTimes(2);
+    const retryUtterance = mockSpeak.mock.calls[1][0];
+    expect(retryUtterance.lang).toBe('en-US');
+    expect(retryUtterance.text).toContain('Ungal sugar alavu 125');
   });
 
   it('renders conversational AI 30-minute outlook summary', () => {

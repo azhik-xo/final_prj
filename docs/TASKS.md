@@ -26,6 +26,7 @@
 | **`TASK-M4-FULL`** | **M4** | AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection | `TASK-INT-01` | **APPROVED** | Developer AI |
 | **`TASK-M3-SENIOR`** | **M3** | Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout | `TASK-INT-01` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **APPROVED** | Developer AI |
+| **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **IN_REVIEW** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -139,6 +140,40 @@
   2. Selecting Tamil sets `SpeechSynthesisUtterance.lang = 'ta-IN'` and generates the correct Tamil narration text.
   3. Spoken Tamil phrases are grammatically natural, respectful, and clinically safe.
   4. All Jest frontend tests pass and Next.js builds with exit code 0.
+
+### `TASK-M3-VOICE-FIX`: Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback
+- **Module:** M3 (Real-Time Patient Dashboard)
+- **Status:** **`IN_REVIEW`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M3-VOICE-TA`
+- **Architectural Reference:** `ADR-008`
+- **Description:**  
+  Resolve the failure where Tamil voice is silent on client browsers (especially Windows / Chromium without native Tamil TTS voices installed):
+  1. **Root Cause Analysis:**
+     - `window.speechSynthesis.getVoices()` is asynchronous and returns `[]` on initial render in Chromium.
+     - Windows standard installations do not bundle Tamil TTS voices (`ta-IN`) by default. Default English voices fail or produce silence when reading Tamil Unicode characters.
+  2. **Multi-Tier Voice Synthesis Solution:**
+     - **Tier 1 (Asynchronous Voice Hydration):** Listen to `speechSynthesis.onvoiceschanged` and populate available voices in state. Search for native Tamil voices (`ta-IN`, `ta`, `Tamil`, `தமிழ்`, `Google தமிழ்`, `Microsoft Valluvar`).
+     - **Tier 2 (Native Voice Synthesis):** If a native Tamil voice is detected, bind `utterance.voice` to that voice and synthesize native Tamil Unicode text (`உங்கள் சர்க்கரை அளவு {val}...`).
+     - **Tier 3 (Phonetic Spoken Tamil Fallback):** If NO native Tamil voice exists in the user's browser/OS, seamlessly synthesize **Phonetic Spoken Tamil (Tanglish)** using the platform's default voice:
+       * Safe: *"Ungal sugar alavu {val}. Idhu sariyaana safe zone-il ulladhu. Sugar calm and steady-aaga ulladhu. Oru glass thanneer kudiyungal."*
+       * Low: *"Warning! Ungal sugar alavu kuraivaaga ulladhu ({val}). Udanae fruit juice alladhu sweet saappidavum. Amaithiyaaga utkaarungal."*
+       * High: *"Kavanikkavum! Ungal sugar alavu adhiga-maaga ulladhu ({val}). Rendu glass thanneer kudiyungal. Sweets thavirkkavum, nandraaga rest edukkavum."*
+       * Enables 100% of Windows/Mac/Linux/Android devices to speak fluent, understandable Tamil without requiring manual OS language pack installations.
+     - **Tier 4 (Automatic Error Fallback):** On `utterance.onerror`, catch `language-unavailable` or speech errors and instantly retry with the phonetic fallback.
+     - **Tier 5 (Chrome Audio State Recovery):** Call `window.speechSynthesis.cancel()` and `window.speechSynthesis.resume()` before speak to resolve Chrome's audio suspension deadlock.
+  3. **UI Enhancements:**
+     - Display a subtle status indicator below the voice button: e.g. *"Tamil Voice: Active"* (or identifying Native vs Phonetic mode).
+     - Strictly zero emojis in source code or UI.
+  4. **Verification & Tests:**
+     - Add unit tests verifying both native Tamil utterance path and phonetic Tamil fallback path when no native voice is present.
+     - Ensure all 17+ Jest tests pass and Next.js builds clean.
+- **Acceptance Criteria:**
+  1. Voice readout plays audibly in Tamil even when the OS does not have a native Tamil TTS voice package installed.
+  2. If native Tamil voice exists, native script is used; otherwise phonetic spoken Tamil is used.
+  3. `speechSynthesis.onvoiceschanged` is properly listened to and cached.
+  4. Chrome audio suspension is prevented with `resume()`.
+  5. All tests pass with zero regressions.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)

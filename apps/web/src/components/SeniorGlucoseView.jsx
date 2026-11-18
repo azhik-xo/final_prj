@@ -37,7 +37,8 @@ function getSeniorGlucoseStatus(glucose) {
       badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
       icon: Clock,
       voiceStatus: 'Connecting sensor. Stand by for your reading.',
-      voiceTamil: () => 'சென்சார் சர்க்கரை அளவை இணைக்கிறது. காத்திருக்கவும்.'
+      voiceTamil: () => 'சென்சார் சர்க்கரை அளவை இணைக்கிறது. காத்திருக்கவும்.',
+      voiceTamilPhonetic: () => 'Sensor sugar alavai connect seigiradhu. Kaathirukkavum.'
     };
   }
 
@@ -53,7 +54,8 @@ function getSeniorGlucoseStatus(glucose) {
       badgeBg: 'bg-rose-600 text-white border-rose-700 animate-pulse',
       icon: AlertTriangle,
       voiceStatus: 'Very low sugar warning! Your glucose is dangerously low. Please have sweet fruit juice or sugar immediately and sit down safely.',
-      voiceTamil: (val) => `அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது (${val}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்.`
+      voiceTamil: (val) => `அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது (${val}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்.`,
+      voiceTamilPhonetic: (val) => `Emergency warning! Sugar alavu romba kuraivaaga ulladhu (${val}). Udanae sweets saappidavum, kudumbathinarai azhaikkavum.`
     };
   }
 
@@ -69,7 +71,8 @@ function getSeniorGlucoseStatus(glucose) {
       badgeBg: 'bg-red-600 text-white border-red-700',
       icon: AlertTriangle,
       voiceStatus: 'Low sugar alert! Your glucose has dropped below normal. Please have half a cup of sweet juice or glucose tablets now and rest quietly.',
-      voiceTamil: (val) => `எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (${val}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்.`
+      voiceTamil: (val) => `எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (${val}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்.`,
+      voiceTamilPhonetic: (val) => `Warning! Ungal sugar alavu kuraivaaga ulladhu (${val}). Udanae half glass fruit juice alladhu sweet saappidavum. Amaithiyaaga utkaarungal.`
     };
   }
 
@@ -85,7 +88,8 @@ function getSeniorGlucoseStatus(glucose) {
       badgeBg: 'bg-emerald-600 text-white border-emerald-700',
       icon: CheckCircle2,
       voiceStatus: 'Your sugar is in the healthy safe zone. Keep up your normal routine and stay hydrated.',
-      voiceTamil: (val) => `உங்கள் சர்க்கரை அளவு ${val}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்.`
+      voiceTamil: (val) => `உங்கள் சர்க்கரை அளவு ${val}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்.`,
+      voiceTamilPhonetic: (val) => `Ungal sugar alavu ${val}. Idhu sariyaana safe zone-il ulladhu. Sugar calm and steady-aaga ulladhu. Oru glass thanneer kudiyungal.`
     };
   }
 
@@ -101,7 +105,8 @@ function getSeniorGlucoseStatus(glucose) {
       badgeBg: 'bg-amber-600 text-white border-amber-700',
       icon: AlertCircle,
       voiceStatus: 'High sugar alert. Your sugar is elevated. Please drink a glass of fresh water, avoid sweets, and rest quietly.',
-      voiceTamil: (val) => `கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (${val}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்.`
+      voiceTamil: (val) => `கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (${val}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்.`,
+      voiceTamilPhonetic: (val) => `Kavanikkavum! Ungal sugar alavu adhiga-maaga ulladhu (${val}). Rendu glass thanneer kudiyungal. Sweets thavirkkavum, nandraaga rest edukkavum.`
     };
   }
 
@@ -116,7 +121,8 @@ function getSeniorGlucoseStatus(glucose) {
     badgeBg: 'bg-rose-600 text-white border-rose-700 animate-pulse',
     icon: AlertCircle,
     voiceStatus: 'Very high sugar alert. Your glucose is significantly high. Drink plenty of fresh water and notify your caregiver.',
-    voiceTamil: (val) => `எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது (${val}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்.`
+    voiceTamil: (val) => `எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது (${val}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்.`,
+    voiceTamilPhonetic: (val) => `Warning! Sugar alavu romba adhiga-maaga ulladhu (${val}). Nariya thanneer kudithu rest edukkavum, family-ku theriya-paduthavum.`
   };
 }
 
@@ -135,7 +141,8 @@ function getSeniorTrend(rateOfChange, trend) {
       icon: ArrowDown,
       iconColor: 'text-rose-600 bg-rose-100',
       voiceText: 'Your sugar is dropping quickly.',
-      voiceTamil: 'சர்க்கரை அளவு வேகமாக குறைகிறது.'
+      voiceTamil: 'சர்க்கரை அளவு வேகமாக குறைகிறது.',
+      voiceTamilPhonetic: 'Sugar alavu vegamaaga kuraigiradhu.'
     };
   }
   if (roc < -0.6) {
@@ -145,7 +152,8 @@ function getSeniorTrend(rateOfChange, trend) {
       icon: ArrowDown,
       iconColor: 'text-blue-600 bg-blue-100',
       voiceText: 'Your sugar is going down slowly.',
-      voiceTamil: 'சர்க்கரை அளவு மெதுவாக குறைகிறது.'
+      voiceTamil: 'சர்க்கரை அளவு மெதுவாக குறைகிறது.',
+      voiceTamilPhonetic: 'Sugar alavu medhuvaaga kuraigiradhu.'
     };
   }
   if (roc <= 0.6) {
@@ -155,7 +163,8 @@ function getSeniorTrend(rateOfChange, trend) {
       icon: Minus,
       iconColor: 'text-emerald-600 bg-emerald-100',
       voiceText: 'Your sugar is calm and steady.',
-      voiceTamil: 'சர்க்கரை அளவு சீராக உள்ளது.'
+      voiceTamil: 'சர்க்கரை அளவு சீராக உள்ளது.',
+      voiceTamilPhonetic: 'Sugar alavu seeraaga ulladhu.'
     };
   }
   if (roc <= 2.0) {
@@ -165,7 +174,8 @@ function getSeniorTrend(rateOfChange, trend) {
       icon: ArrowUp,
       iconColor: 'text-amber-600 bg-amber-100',
       voiceText: 'Your sugar is rising slowly.',
-      voiceTamil: 'சர்க்கரை அளவு மெதுவாக உயர்கிறது.'
+      voiceTamil: 'சர்க்கரை அளவு மெதுவாக உயர்கிறது.',
+      voiceTamilPhonetic: 'Sugar alavu medhuvaaga uyar-giradhu.'
     };
   }
   return {
@@ -174,7 +184,8 @@ function getSeniorTrend(rateOfChange, trend) {
     icon: ArrowUp,
     iconColor: 'text-amber-700 bg-amber-100',
     voiceText: 'Your sugar is rising rapidly after food or activity.',
-    voiceTamil: 'சர்க்கரை அளவு வேகமாக உயர்கிறது.'
+    voiceTamil: 'சர்க்கரை அளவு வேகமாக உயர்கிறது.',
+    voiceTamilPhonetic: 'Sugar alavu vegamaaga uyar-giradhu.'
   };
 }
 
@@ -242,63 +253,19 @@ function getActionChecklist(category) {
   ];
 }
 
-/**
- * Generates authentic, clinically safe spoken Tamil narration.
- * @param {number|null} glucose
- * @param {number|null} roundedGlucose
- * @param {number} rateOfChange
- */
-function getTamilVoiceText(glucose, roundedGlucose, rateOfChange) {
-  if (glucose === null || glucose === undefined) {
-    return 'சென்சார் இணைக்கப்படுகிறது. உங்கள் சர்க்கரை அளவை அளவிட தயவுசெய்து காத்திருக்கவும்.';
-  }
-
-  const valStr = roundedGlucose !== null ? `${roundedGlucose}` : '';
-  const roc = Number(rateOfChange || 0);
-
-  let statusPhrase = '';
-  if (glucose < 54) {
-    statusPhrase = `அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது (${valStr}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்.`;
-  } else if (glucose < 70) {
-    statusPhrase = `எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (${valStr}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்.`;
-  } else if (glucose <= 180) {
-    statusPhrase = `உங்கள் சர்க்கரை அளவு ${valStr}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்.`;
-  } else if (glucose <= 250) {
-    statusPhrase = `கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (${valStr}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்.`;
-  } else {
-    statusPhrase = `எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது (${valStr}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்.`;
-  }
-
-  let trendPhrase = '';
-  if (roc <= -2.0) {
-    trendPhrase = 'சர்க்கரை அளவு வேகமாக குறைகிறது.';
-  } else if (roc < -0.6) {
-    trendPhrase = 'சர்க்கரை அளவு மெதுவாக குறைகிறது.';
-  } else if (roc <= 0.6) {
-    trendPhrase = 'சர்க்கரை அளவு சீராக உள்ளது.';
-  } else if (roc <= 2.0) {
-    trendPhrase = 'சர்க்கரை அளவு மெதுவாக உயர்கிறது.';
-  } else {
-    trendPhrase = 'சர்க்கரை அளவு வேகமாக உயர்கிறது.';
-  }
-
-  if (glucose >= 70 && glucose <= 180 && roc > -0.6 && roc <= 0.6) {
-    return statusPhrase;
-  }
-
-  return `${statusPhrase} ${trendPhrase}`;
-}
-
 export default function SeniorGlucoseView({ reading, prediction, persona }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
   const [voiceLang, setVoiceLang] = useState('en'); // 'en' | 'ta'
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [hasNativeTamilVoice, setHasNativeTamilVoice] = useState(false);
+  const [nativeTamilVoice, setNativeTamilVoice] = useState(null);
 
-  // Restore voice language from localStorage
+  // Restore voice language preference from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLang = localStorage.getItem('glucoguard_voice_lang');
-      if (savedLang === 'en' || savedLang === 'ta') {
+      if (savedLang === 'ta' || savedLang === 'en') {
         setVoiceLang(savedLang);
       }
     }
@@ -308,12 +275,49 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
     setVoiceLang(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('glucoguard_voice_lang', lang);
-      if (window.speechSynthesis && window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      }
     }
   };
+
+  // Asynchronous Voice Hydration & Detection
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const detectVoices = () => {
+      const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      setAvailableVoices(voices);
+
+      const found = voices.find((v) => {
+        const lang = (v.lang || '').toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        return (
+          lang === 'ta-in' ||
+          lang === 'ta_in' ||
+          lang.startsWith('ta') ||
+          name.includes('tamil') ||
+          name.includes('தமிழ்')
+        );
+      });
+
+      if (found) {
+        setHasNativeTamilVoice(true);
+        setNativeTamilVoice(found);
+      } else {
+        setHasNativeTamilVoice(false);
+        setNativeTamilVoice(null);
+      }
+    };
+
+    detectVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = detectVoices;
+    }
+
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
 
   const glucose = reading ? reading.glucose : null;
   const roundedGlucose = glucose !== null ? Math.round(glucose) : null;
@@ -356,68 +360,81 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
     return ((clamped - 40) / (300 - 40)) * 100;
   }, [glucose]);
 
-  // Web Speech API Readout with Bilingual Support (English & தமிழ்)
+  // Multi-Tier Resilient TTS Audio Synthesis (English, Native Tamil & Universal Phonetic Tanglish)
   const handleSpeak = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       alert('Speech synthesis is not supported on this browser.');
       return;
     }
 
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+    // Chrome audio state recovery (unblock pipeline)
+    window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
+    if (isSpeaking) {
       setIsSpeaking(false);
       return;
     }
 
-    let textToSpeak = '';
-    let langCode = 'en-US';
-    let rate = 0.88;
+    const val = roundedGlucose !== null ? `${roundedGlucose}` : '';
+
+    const executeUtterance = (text, lang, rate, voice = null, isFallback = false) => {
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = rate;
+        utterance.pitch = 1.0;
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = (e) => {
+          console.warn('[SpeechSynthesis Error]', e);
+          setIsSpeaking(false);
+          // Tier 4: Automatic retry with phonetic Tanglish if native Tamil failed
+          if (!isFallback && voiceLang === 'ta') {
+            console.info('[SpeechSynthesis] Retrying with universal phonetic voice...');
+            const phoneticStatus = status.voiceTamilPhonetic ? status.voiceTamilPhonetic(val) : '';
+            const phoneticTrend = trend.voiceTamilPhonetic || '';
+            const fallbackText = `${phoneticStatus} ${phoneticTrend}`.trim();
+            executeUtterance(fallbackText, 'en-US', 0.82, null, true);
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('[SpeechSynthesis Trigger Error]', err);
+        setIsSpeaking(false);
+      }
+    };
 
     if (voiceLang === 'ta') {
-      langCode = 'ta-IN';
-      rate = 0.85; // Calibrated for natural elder Tamil comprehension
-      const val = roundedGlucose !== null ? `${roundedGlucose}` : '';
-      const tamilStatusText = status.voiceTamil ? status.voiceTamil(val) : '';
-      const tamilTrendText = trend.voiceTamil || '';
-      textToSpeak = `${tamilStatusText} ${tamilTrendText}`.trim();
+      if (hasNativeTamilVoice && nativeTamilVoice) {
+        // Tier 2: Native Tamil voice detected and bound
+        const tamilStatusText = status.voiceTamil ? status.voiceTamil(val) : '';
+        const tamilTrendText = trend.voiceTamil || '';
+        const textToSpeak = `${tamilStatusText} ${tamilTrendText}`.trim();
+        executeUtterance(textToSpeak, 'ta-IN', 0.85, nativeTamilVoice, false);
+      } else {
+        // Tier 3: Universal Phonetic Tamil (Tanglish) for standard Windows/Mac without Tamil TTS
+        const phoneticStatus = status.voiceTamilPhonetic ? status.voiceTamilPhonetic(val) : '';
+        const phoneticTrend = trend.voiceTamilPhonetic || '';
+        const textToSpeak = `${phoneticStatus} ${phoneticTrend}`.trim();
+        executeUtterance(textToSpeak, 'en-US', 0.82, null, true);
+      }
     } else {
+      // English Voice Readout
       const glucosePhrase = roundedGlucose !== null
         ? `Your current glucose reading is ${roundedGlucose} milligrams per deciliter.`
         : 'Sensor reading is currently standing by.';
-      textToSpeak = `${glucosePhrase} ${status.voiceStatus} ${trend.voiceText} ${checklist[0].title}: ${checklist[0].text}`;
+      const textToSpeak = `${glucosePhrase} ${status.voiceStatus} ${trend.voiceText} ${checklist[0].title}: ${checklist[0].text}`;
+      executeUtterance(textToSpeak, 'en-US', 0.88, null, false);
     }
-
-    try {
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = rate;
-      utterance.pitch = 1.0;
-      utterance.lang = langCode;
-
-      if (voiceLang === 'ta' && typeof window !== 'undefined' && window.speechSynthesis) {
-        const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
-        const tamilVoice = voices.find(
-          (v) =>
-            v.lang === 'ta-IN' ||
-            v.lang === 'ta_IN' ||
-            v.lang?.startsWith('ta') ||
-            v.name?.includes('Tamil') ||
-            v.name?.includes('தமிழ்')
-        );
-        if (tamilVoice) {
-          utterance.voice = tamilVoice;
-        }
-      }
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech synthesis failed:', e);
-      setIsSpeaking(false);
-    }
-  }, [roundedGlucose, status, trend, checklist, voiceLang]);
+  }, [roundedGlucose, status, trend, checklist, voiceLang, hasNativeTamilVoice, nativeTamilVoice, isSpeaking]);
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {
@@ -550,7 +567,7 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
           </div>
         </div>
 
-        {/* 4. Plain-Language Trend & Bilingual Audio Voice Readout Bar (TASK-M3-VOICE-TA) */}
+        {/* 4. Plain-Language Trend & Resilient Audio Voice Readout Bar (TASK-M3-VOICE-FIX) */}
         <div className="mt-8 p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${trend.iconColor}`}>
@@ -572,37 +589,50 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
           {/* Bilingual Voice Switcher & Large Audio Readout Button */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Language toggle: English vs தமிழ் */}
-            <div className="inline-flex rounded-2xl border border-slate-300 p-1 bg-white shadow-2xs items-center">
-              <div className="px-2 text-slate-500 flex items-center gap-1.5 text-xs font-semibold">
-                <Languages className="w-4 h-4 text-indigo-600" />
-                <span className="hidden sm:inline">Voice:</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="inline-flex rounded-2xl border border-slate-300 p-1 bg-white shadow-2xs items-center">
+                <div className="px-2 text-slate-500 flex items-center gap-1.5 text-xs font-semibold">
+                  <Languages className="w-4 h-4 text-indigo-600" />
+                  <span className="hidden sm:inline">Voice:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleVoiceLang('en')}
+                  data-testid="toggle-voice-en"
+                  aria-pressed={voiceLang === 'en'}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    voiceLang === 'en'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleVoiceLang('ta')}
+                  data-testid="toggle-voice-ta"
+                  aria-pressed={voiceLang === 'ta'}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    voiceLang === 'ta'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  தமிழ் (Tamil)
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => handleToggleVoiceLang('en')}
-                data-testid="toggle-voice-en"
-                aria-pressed={voiceLang === 'en'}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  voiceLang === 'en'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => handleToggleVoiceLang('ta')}
-                data-testid="toggle-voice-ta"
-                aria-pressed={voiceLang === 'ta'}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  voiceLang === 'ta'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                தமிழ் (Tamil)
-              </button>
+
+              {/* Status Indicator for Tamil Voice Mode */}
+              {voiceLang === 'ta' && (
+                <div
+                  data-testid="tamil-voice-mode-badge"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-mono text-slate-600"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${hasNativeTamilVoice ? 'bg-emerald-500' : 'bg-indigo-500'} animate-pulse`} />
+                  <span>{hasNativeTamilVoice ? 'Native HD Voice' : 'Universal Voice Active'}</span>
+                </div>
+              )}
             </div>
 
             {/* Large Audio Voice Readout Button */}
