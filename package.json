@@ -14,6 +14,10 @@
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:ai": "cd services/ai-engine && .\\.venv\\Scripts\\uvicorn.exe main:app --reload --port 8000",
+    "dev:all": "node scripts/demo_runner.js",
+    "demo": "node scripts/demo_runner.js",
+    "demo:check": "node scripts/demo_runner.js --check",
+    "build": "npm run build --workspace=apps/web",
     "start:api": "npm run start --workspace=apps/api",
     "start:web": "npm run start --workspace=apps/web"
   },
