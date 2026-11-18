@@ -242,16 +242,63 @@ function getActionChecklist(category) {
   ];
 }
 
+/**
+ * Generates authentic, clinically safe spoken Tamil narration.
+ * @param {number|null} glucose
+ * @param {number|null} roundedGlucose
+ * @param {number} rateOfChange
+ */
+function getTamilVoiceText(glucose, roundedGlucose, rateOfChange) {
+  if (glucose === null || glucose === undefined) {
+    return 'சென்சார் இணைக்கப்படுகிறது. உங்கள் சர்க்கரை அளவை அளவிட தயவுசெய்து காத்திருக்கவும்.';
+  }
+
+  const valStr = roundedGlucose !== null ? `${roundedGlucose}` : '';
+  const roc = Number(rateOfChange || 0);
+
+  let statusPhrase = '';
+  if (glucose < 54) {
+    statusPhrase = `அவசர எச்சரிக்கை! சர்க்கரை அளவு அபாயகரமான மிகக் குறைவாக உள்ளது (${valStr}). உடனே இனிப்பு குடிக்கவும், குடும்பத்தினரை அழைக்கவும்.`;
+  } else if (glucose < 70) {
+    statusPhrase = `எச்சரிக்கை! உங்கள் சர்க்கரை அளவு குறைவாக உள்ளது (${valStr}). உடனே அரை டம்ளர் பழச்சாறு அல்லது இனிப்பு சாக்லேட் சாப்பிடவும். அமைதியாக உட்காருங்கள், படிக்கட்டுகளில் ஏற வேண்டாம்.`;
+  } else if (glucose <= 180) {
+    statusPhrase = `உங்கள் சர்க்கரை அளவு ${valStr}. இது சரியான மற்றும் ஆரோக்கியமான பாதுகாப்பான அளவில் உள்ளது. சர்க்கரை அளவு சீராக உள்ளது. ஒரு டம்ளர் நல்ல தண்ணீர் குடிக்கவும்.`;
+  } else if (glucose <= 250) {
+    statusPhrase = `கவனிக்கவும்! சர்க்கரை அளவு அதிகமாக உள்ளது (${valStr}). ஒன்று அல்லது இரண்டு டம்ளர் தண்ணீர் குடிக்கவும். இனிப்பு உணவுகளை தவிர்க்கவும், அமைதியாக ஓய்வெடுக்கவும்.`;
+  } else {
+    statusPhrase = `எச்சரிக்கை! சர்க்கரை அளவு மிக அதிகமாக உள்ளது (${valStr}). நிறைய தண்ணீர் குடித்து ஓய்வெடுக்கவும், குடும்பத்தினருக்கு தெரிவிக்கவும்.`;
+  }
+
+  let trendPhrase = '';
+  if (roc <= -2.0) {
+    trendPhrase = 'சர்க்கரை அளவு வேகமாக குறைகிறது.';
+  } else if (roc < -0.6) {
+    trendPhrase = 'சர்க்கரை அளவு மெதுவாக குறைகிறது.';
+  } else if (roc <= 0.6) {
+    trendPhrase = 'சர்க்கரை அளவு சீராக உள்ளது.';
+  } else if (roc <= 2.0) {
+    trendPhrase = 'சர்க்கரை அளவு மெதுவாக உயர்கிறது.';
+  } else {
+    trendPhrase = 'சர்க்கரை அளவு வேகமாக உயர்கிறது.';
+  }
+
+  if (glucose >= 70 && glucose <= 180 && roc > -0.6 && roc <= 0.6) {
+    return statusPhrase;
+  }
+
+  return `${statusPhrase} ${trendPhrase}`;
+}
+
 export default function SeniorGlucoseView({ reading, prediction, persona }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
   const [voiceLang, setVoiceLang] = useState('en'); // 'en' | 'ta'
 
-  // Restore voice language preference from localStorage
+  // Restore voice language from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLang = localStorage.getItem('glucoguard_voice_lang');
-      if (savedLang === 'ta' || savedLang === 'en') {
+      if (savedLang === 'en' || savedLang === 'ta') {
         setVoiceLang(savedLang);
       }
     }
@@ -261,6 +308,10 @@ export default function SeniorGlucoseView({ reading, prediction, persona }) {
     setVoiceLang(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('glucoguard_voice_lang', lang);
+      if (window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
     }
   };
 
