@@ -15,6 +15,7 @@ This document formalizes the key architectural, technical, and safety decisions 
 - [ADR-007: Clinical Safety Boundaries and Non-Device Disclaimer Policy](#adr-007-clinical-safety-boundaries-and-non-device-disclaimer-policy)
 - [ADR-008: Senior & Geriatric Accessibility UX Protocol](#adr-008-senior--geriatric-accessibility-ux-protocol)
 - [ADR-009: Nutritional Glycemic Impact Modeling and Diet Planning Safety Protocol](#adr-009-nutritional-glycemic-impact-modeling-and-diet-planning-safety-protocol)
+- [ADR-010: Physical Activity Glycemic Modeling & Clinical Safety Interlocks Protocol](#adr-010-physical-activity-glycemic-modeling--clinical-safety-interlocks-protocol)
 
 ---
 
@@ -168,4 +169,29 @@ This document formalizes the key architectural, technical, and safety decisions 
 - **Trade-offs:**  
   *Pros:* Transparent, explainable metabolic impact forecasting without clinical liability.  
   *Cons:* Cannot replace individualized clinical insulin bolus calculators.
+
+---
+
+### ADR-010: Physical Activity Glycemic Modeling & Clinical Safety Interlocks Protocol
+- **Status:** **APPROVED**
+- **Date:** 2026-11-18
+- **Context:**  
+  Physical activity stimulates GLUT4 translocation and dramatically accelerates glucose uptake in skeletal muscle. In diabetic patients, performing exercise while glucose is already low or dropping induces acute, potentially fatal severe hypoglycemia. Conversely, intense anaerobic exertion during acute hyperglycemia ($>250$ mg/dL) can precipitate diabetic ketoacidosis (DKA) due to counter-regulatory catecholamine surges.
+- **Decision:**  
+  Implement deterministic clinical safety interlocks and physiological exercise drawdown modeling in Module M6:
+  1. *Hard Hypoglycemia Lockout ($<90$ mg/dL or $dG/dt < -1.5$ mg/dL/min):*  
+     Physical activity is STRICTLY LOCKED OUT in the UI and API. Guidance directs the user to consume 15g fast-acting carbohydrates and wait for glucose to rise above $100$ mg/dL.
+  2. *Hyperglycemia / Ketosis Lockout ($>250$ mg/dL):*  
+     Strenuous and anaerobic workouts are LOCKED OUT. Recommends gentle walking and hydration only.
+  3. *Safe Exercise Window ($90–250$ mg/dL):*  
+     Authorizes exercise and calculates expected glucose drawdown:
+     $$\Delta G_{\text{drawdown}} = -1.0 \times \text{Duration} \times \text{IntensityFactor} \times (\text{MET} / 3.5)$$
+     Clamped to $[-120, 0]$ mg/dL.
+  4. *Closed-Loop Simulation Bridge:*  
+     Logging a workout bridges to the running Virtual CGM Simulator to trigger realistic `exercise` drawdown telemetry.
+  5. *Zero Emojis & Non-Clinical Disclaimer:*  
+     Strictly Lucide React library icons only, with non-device educational simulation notices.
+- **Trade-offs:**  
+  *Pros:* Enforces real-world clinical safety guidelines (ADA standards of care for exercise) and prevents simulation of dangerous diabetic behaviors.  
+  *Cons:* Strict lockouts prevent users from logging hypothetical workouts during simulated lows without overriding.
 

@@ -28,6 +28,7 @@
 | **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **APPROVED** | Developer AI |
 | **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **APPROVED** | Developer AI |
+| **`TASK-M6-FULL`** | **M6** | AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine | `TASK-M5-FULL` | **READY** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -225,6 +226,60 @@
   2. AI engine returns predictable, physiologically bounded excursions ($0–150$ mg/dL).
   3. Web UI allows quick preset logging and custom logging with real-time predicted spike preview.
   4. No emojis in code or UI; all unit and integration tests pass across all 3 stacks.
+
+### `TASK-M6-FULL`: AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine
+- **Module:** M6 (AI Workout Planner)
+- **Status:** **`READY`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M5-FULL`
+- **Architectural Reference:** `ADR-007`, `ADR-010`
+- **Description:**  
+  Develop end-to-end safe physical activity planning and exercise glycemic modeling across the monorepo:
+  1. **FastAPI AI Engine Submodule (`services/ai-engine/models/workout_advisor.py`):**
+     - Reference physical activity database (Brisk Walking, Running/Jogging, Cycling, Swimming, Resistance/Weights, Yoga) with METs, typical calorie burn rates, and glucose drawdown kinetics.
+     - Deterministic Clinical Safety Interlocks:
+       * **Hypoglycemia Lockout ($<90$ mg/dL or $dG/dt < -1.5$ mg/dL/min):**
+         `status: "locked_hypo"`, physical exertion contraindicated. Advises 15g fast-acting carbs and waiting for glucose to rise $>100$ mg/dL.
+       * **Hyperglycemia / Ketosis Warning ($>250$ mg/dL):**
+         `status: "caution_hyper"`, strenuous anaerobic workouts locked out. Recommends gentle 15-min walking and hydration.
+       * **Safe Activity Window ($90–250$ mg/dL):**
+         `status: "safe"`, calculates estimated glucose drawdown $\Delta G_{\text{drawdown}} = -1.0 \times \text{Duration} \times \text{IntensityFactor} \times (\text{MET} / 3.5)$ clamped to $[-120, 0]$ mg/dL, projected post-workout nadir, and 2-hour recovery trajectory.
+     - Endpoints in `services/ai-engine/routes/workout_routes.py`:
+       * `POST /api/v1/ai/workout/advise`: Evaluates workout safety and computes drawdown.
+       * `GET /api/v1/ai/workout/activities`: Returns reference activity library with METs.
+       * `GET /api/v1/ai/workout/safety-check`: Rapid safety interlock evaluation for current glucose.
+  2. **Express Backend Endpoints & Persistence (`apps/api`):**
+     - Mongoose schema `apps/api/src/models/activity.model.js`:
+       * Fields: `userId`, `activityType`, `name`, `intensity` (`low`, `moderate`, `high`), `durationMinutes`, `caloriesBurned`, `startGlucose`, `estimatedDrawdownMgDl`, `projectedPostGlucose`, `safetyStatus` (`safe`, `locked_hypo`, `caution_hyper`), `source: "simulation"`, `timestamp`.
+     - Controller & Routes in `apps/api/src/routes/activity.routes.js` mounted at `/api/v1/activity`:
+       * `POST /api/v1/activity/logs`: Logs workout session, evaluates AI safety interlocks, persists to MongoDB, and bridges to SimulatorEngine: if simulator is running, triggers simulated `exercise` drawdown event!
+       * `GET /api/v1/activity/logs`: Returns historical workout sessions.
+       * `GET /api/v1/activity/safety-check`: Evaluates real-time safety status from latest CGM reading.
+       * `GET /api/v1/activity/recommendations`: Returns personalized safe activity suggestions.
+  3. **Next.js Web UI (`apps/web/src/app/workout/page.js`):**
+     - Global navigation header updated with "Workout Planner" link pointing to `/workout`.
+     - Dynamic Real-Time Safety Interlock Hero Banner:
+       * Green: **"SAFE TO EXERCISE"** (Glucose in 90-250 mg/dL target zone).
+       * Red Lockout: **"EXERCISE LOCKED - LOW SUGAR (<90 mg/dL)"** with emergency carb checklist.
+       * Amber Lockout: **"EXERCISE CAUTION - HIGH SUGAR (>250 mg/dL)"** with hydration alert.
+     - 1-Click quick workout presets (30m Brisk Walk, 20m Light Jog, 25m Cycling, 30m Swimming, 20m Resistance Dumbbells, 25m Gentle Yoga).
+     - Interactive custom workout logger with live duration slider and real-time predicted glucose drawdown preview.
+     - Interactive SVG 2-hour workout and post-workout recovery kinetic curve.
+     - Recent workout activity history table with calories burned and glycemic safety tags.
+     - Pre-workout snack advice and hydration guidelines.
+     - STRICT NON-NEGOTIABLE RULE: Zero emojis! Use Lucide React library icons only (`Dumbbell`, `Activity`, `Flame`, `ShieldAlert`, `CheckCircle2`, `Heart`, `Lock`, `Unlock`, `Clock`, `Footprints`, `Plus`, `Sparkles`, `TrendingDown`).
+     - Prominent non-clinical simulation disclaimer banners (ADR-007, ADR-010).
+  4. **Verification & Tests:**
+     - Python unit tests in `services/ai-engine/tests/test_workout_engine.py`.
+     - Node integration tests in `apps/api/tests/activity.test.js`.
+     - Jest component tests in `apps/web/tests/workout.test.js`.
+     - Next.js production build exits code 0.
+- **Acceptance Criteria:**
+  1. Hypoglycemia lockout (<90 mg/dL) strictly flags activity as unsafe and prevents reckless exercise recommendations.
+  2. Hyperglycemia caution (>250 mg/dL) locks out high-intensity anaerobic workouts.
+  3. Safe workouts calculate physiologically bounded drawdowns ($-120$ to $0$ mg/dL).
+  4. Logging a workout successfully persists to MongoDB and bridges to `SimulatorEngine` if active.
+  5. UI is 100% free of emojis and all unit/integration tests pass across all services.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)
