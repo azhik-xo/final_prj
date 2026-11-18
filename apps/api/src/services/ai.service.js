@@ -213,6 +213,193 @@ class AIService {
       }
     };
   }
+
+  /**
+   * Analyzes meal macronutrients and calculates predicted glycemic spike (Module M5).
+   *
+   * @param {object} meal - Meal macronutrient payload
+   * @returns {Promise<object>} Excursion prediction with trajectory
+   */
+  async analyzeMealImpact(meal = {}) {
+    const carbs = Number(meal.carbs || 0);
+    const protein = Number(meal.protein || 0);
+    const fat = Number(meal.fat || 0);
+    const fiber = Number(meal.fiber || 0);
+    const glycemicIndex = Number(meal.glycemicIndex || 55);
+    const currentGlucose = meal.currentGlucose ? Number(meal.currentGlucose) : null;
+    const name = meal.name || 'Meal';
+
+    try {
+      const response = await fetch(`${this.aiEngineUrl}/api/v1/ai/diet/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          carbs,
+          protein,
+          fat,
+          fiber,
+          glycemicIndex,
+          currentGlucose
+        }),
+        signal: AbortSignal.timeout(3000)
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        return json.data || json;
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+
+    return this._computeLocalDietExcursionFallback(carbs, protein, fat, fiber, glycemicIndex, currentGlucose, name);
+  }
+
+  /**
+   * Returns curated low-GI food substitutions and diabetic dietary guidelines.
+   */
+  async getDietRecommendations() {
+    try {
+      const response = await fetch(`${this.aiEngineUrl}/api/v1/ai/diet/recommendations`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        return json.data || json;
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+
+    return {
+      swaps: [
+        {
+          originalFood: 'White Bread / Toast',
+          originalGi: 78,
+          recommendedSwap: '100% Sprouted Whole Grain Bread or Sourdough',
+          recommendedGi: 48,
+          glycemicBenefit: 'Reduces peak spike by ~22 mg/dL',
+          fiberIncreaseGrams: 4.5
+        },
+        {
+          originalFood: 'Polished White Rice',
+          originalGi: 73,
+          recommendedSwap: 'Brown Basmati Rice, Quinoa, or Cauliflower Rice',
+          recommendedGi: 45,
+          glycemicBenefit: 'Reduces peak spike by ~28 mg/dL',
+          fiberIncreaseGrams: 5.0
+        },
+        {
+          originalFood: 'Regular Sugary Soda',
+          originalGi: 85,
+          recommendedSwap: 'Lemon-Mint Infused Sparkling Water or Iced Green Tea',
+          recommendedGi: 0,
+          glycemicBenefit: 'Prevents steep +45-60 mg/dL rapid spike',
+          fiberIncreaseGrams: 0.0
+        }
+      ],
+      guidelines: [
+        'Prioritize non-starchy vegetables on half your plate.',
+        'Combine complex carbs with protein and healthy fats to slow absorption.',
+        'Choose water over caloric beverages.'
+      ],
+      generalGuidelines: [
+        'Prioritize non-starchy vegetables on half your plate.',
+        'Combine complex carbs with protein and healthy fats to slow absorption.',
+        'Choose water over caloric beverages.'
+      ]
+    };
+  }
+
+  /**
+   * Returns reference diabetic food database.
+   */
+  async getReferenceFoods() {
+    try {
+      const response = await fetch(`${this.aiEngineUrl}/api/v1/ai/diet/foods`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        return json.data || json;
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+
+    return [
+      { id: 'oatmeal_almonds', name: 'Steel-Cut Oatmeal with Almonds', category: 'breakfast', carbs: 32, protein: 8, fat: 7, fiber: 6, glycemicIndex: 42, calories: 220, giCategory: 'low' },
+      { id: 'brown_rice_bowl', name: 'Brown Rice Veggie Bowl with Tofu', category: 'lunch', carbs: 45, protein: 14, fat: 6, fiber: 7, glycemicIndex: 50, calories: 290, giCategory: 'low' },
+      { id: 'grilled_chicken_salad', name: 'Mediterranean Grilled Chicken Salad', category: 'dinner', carbs: 8, protein: 28, fat: 9, fiber: 4, glycemicIndex: 20, calories: 230, giCategory: 'low' },
+      { id: 'dosa_sambar', name: 'Traditional Dosa with Veggie Sambar', category: 'breakfast', carbs: 52, protein: 9, fat: 8, fiber: 5, glycemicIndex: 62, calories: 320, giCategory: 'medium' },
+      { id: 'white_bread_jam', name: 'White Toast with Fruit Jam', category: 'breakfast', carbs: 50, protein: 4, fat: 4, fiber: 1, glycemicIndex: 78, calories: 250, giCategory: 'high' },
+      { id: 'sweet_soda', name: 'Regular Carbonated Soda (330ml)', category: 'snack', carbs: 39, protein: 0, fat: 0, fiber: 0, glycemicIndex: 85, calories: 150, giCategory: 'high' }
+    ];
+  }
+
+  _computeLocalDietExcursionFallback(carbs, protein, fat, fiber, glycemicIndex, currentGlucose, name) {
+    const netCarbs = Math.max(0, carbs - fiber);
+    const gi = Math.max(10, Math.min(100, glycemicIndex));
+    const giFactor = 0.5 + (gi / 100) * 1.3;
+    const buffering = Math.min(22.0, (fat * 0.28) + (protein * 0.16));
+    const fiberBlunting = fiber * 0.75;
+    const rawSpike = netCarbs <= 0.5 ? 0 : (netCarbs * giFactor) - fiberBlunting - (buffering * 0.35);
+    const estimatedSpike = Math.max(0, Math.min(150, Math.round(rawSpike * 10) / 10));
+
+    const basePeakTime = gi < 55 ? 65 : gi < 70 ? 50 : 35;
+    const timeDelay = Math.min(20, (fat * 0.4) + (protein * 0.2));
+    const timeToPeak = Math.round(Math.max(30, Math.min(80, basePeakTime + timeDelay)));
+
+    const baseGlucose = currentGlucose !== null ? Math.max(40, Math.min(400, currentGlucose)) : 105;
+    const projectedPeak = Math.min(400, Math.round((baseGlucose + estimatedSpike) * 10) / 10);
+
+    const trajectory = [];
+    for (let min = 0; min <= 120; min += 10) {
+      let rise;
+      if (min <= timeToPeak) {
+        rise = estimatedSpike * Math.sin((Math.PI / 2) * (min / Math.max(1, timeToPeak)));
+      } else {
+        rise = estimatedSpike * Math.exp(-(min - timeToPeak) / 45.0);
+      }
+      trajectory.push({
+        minute: min,
+        projectedGlucose: Math.max(40, Math.min(400, Math.round((baseGlucose + rise) * 10) / 10)),
+        delta: Math.round(rise * 10) / 10
+      });
+    }
+
+    const giCategory = gi < 55 ? 'low' : gi < 70 ? 'medium' : 'high';
+    const riskLevel = estimatedSpike <= 30 ? 'safe' : estimatedSpike <= 65 ? 'moderate' : 'high_spike';
+
+    return {
+      name,
+      carbs,
+      protein,
+      fat,
+      fiber,
+      netCarbs: Math.round(netCarbs * 10) / 10,
+      glycemicIndex: gi,
+      giCategory,
+      estimatedSpikeMgDl: estimatedSpike,
+      timeToPeakMinutes: timeToPeak,
+      currentGlucose: baseGlucose,
+      projectedPeakGlucose: projectedPeak,
+      riskLevel,
+      riskLabel: riskLevel === 'safe' ? 'Minimal Glycemic Excursion' : riskLevel === 'moderate' ? 'Moderate Excursion' : 'Significant Glucose Spike Anticipated',
+      recommendation: riskLevel === 'safe'
+        ? 'Diabetic-friendly meal profile. Expected to keep blood sugar stable.'
+        : 'Noticeable rise anticipated. Consider combining with fiber or water.',
+      trajectory,
+      projectedTrajectory: trajectory,
+      source: 'simulation',
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 const aiService = new AIService();

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from routes.prediction_routes import router as ai_router
+from routes.diet_routes import router as diet_router
 
 app = FastAPI(
     title="GlucoGuard AI Intelligence Engine",
@@ -39,6 +40,10 @@ async def add_simulation_headers(request, call_next):
 # Mount AI Intelligence Engine Routes (both versioned and root paths)
 app.include_router(ai_router, prefix="/api/v1/ai")
 app.include_router(ai_router)
+
+# Mount AI Diet Planner Routes (Module M5)
+app.include_router(diet_router, prefix="/api/v1/ai/diet")
+app.include_router(diet_router, prefix="/ai/diet")
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():

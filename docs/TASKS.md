@@ -27,7 +27,7 @@
 | **`TASK-M3-SENIOR`** | **M3** | Senior & Accessibility Mode: Simplified Elder View, Giant Typography, Plain Language Guidance & Voice Readout | `TASK-INT-01` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **APPROVED** | Developer AI |
-| **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **READY** | Developer AI |
+| **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **IN_REVIEW** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -178,7 +178,7 @@
 
 ### `TASK-M5-FULL`: AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps
 - **Module:** M5 (AI Diet Planner)
-- **Status:** **`READY`**
+- **Status:** **`IN_REVIEW`**
 - **Assignee:** Developer AI
 - **Dependencies:** `TASK-M4-FULL`
 - **Architectural Reference:** `ADR-007`, `ADR-009`
