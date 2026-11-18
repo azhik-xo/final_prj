@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from routes.prediction_routes import router as ai_router
 from routes.diet_routes import router as diet_router
+from routes.workout_routes import router as workout_router
 
 app = FastAPI(
     title="GlucoGuard AI Intelligence Engine",
@@ -44,6 +45,10 @@ app.include_router(ai_router)
 # Mount AI Diet Planner Routes (Module M5)
 app.include_router(diet_router, prefix="/api/v1/ai/diet")
 app.include_router(diet_router, prefix="/ai/diet")
+
+# Mount AI Workout Planner Routes (Module M6)
+app.include_router(workout_router, prefix="/api/v1/ai/workout")
+app.include_router(workout_router, prefix="/ai/workout")
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():

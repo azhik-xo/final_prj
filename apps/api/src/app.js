@@ -13,6 +13,7 @@ const healthRoutes = require('./routes/health.routes');
 const simulatorRoutes = require('./routes/simulator.routes');
 const cgmRoutes = require('./routes/cgm.routes');
 const dietRoutes = require('./routes/diet.routes');
+const activityRoutes = require('./routes/activity.routes');
 
 const app = express();
 
@@ -38,7 +39,7 @@ app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/simulator', simulatorRoutes);
 app.use('/api/v1/cgm', cgmRoutes);
 app.use('/api/v1/diet', dietRoutes);
-app.use('/api/v1/diet', dietRoutes);
+app.use('/api/v1/activity', activityRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -50,7 +51,8 @@ app.get('/', (req, res) => {
     health: '/health',
     simulator: '/api/v1/simulator/status',
     cgm: '/api/v1/cgm/history',
-    diet: '/api/v1/diet/meals'
+    diet: '/api/v1/diet/meals',
+    activity: '/api/v1/activity/logs'
   });
 });
 
