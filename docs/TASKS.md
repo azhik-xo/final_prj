@@ -30,7 +30,8 @@
 | **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **APPROVED** | Developer AI |
 | **`TASK-M6-FULL`** | **M6** | AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine | `TASK-M5-FULL` | **APPROVED** | Developer AI |
 | **`TASK-M7-FULL`** | **M7** | Emergency Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch | `TASK-M6-FULL` | **APPROVED** | Developer AI |
-| **`TASK-M8-FULL`** | **M8** | Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report | `TASK-M7-FULL` | **IN_REVIEW** | Developer AI |
+| **`TASK-M8-FULL`** | **M8** | Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report | `TASK-M7-FULL` | **APPROVED** | Developer AI |
+| **`TASK-E2E-01`** | **E2E** | Full System Integration, Verification & Multi-Module End-to-End Demonstration Protocol | `TASK-M8-FULL` | **READY** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -362,7 +363,7 @@
 
 ### `TASK-M8-FULL`: Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report
 - **Module:** M8 (Caregiver & Doctor Clinical Portal)
-- **Status:** **`IN_REVIEW`**
+- **Status:** **`APPROVED`**
 - **Assignee:** Developer AI
 - **Dependencies:** `TASK-M7-FULL`
 - **Architectural Reference:** `ADR-007`, `ADR-012`
@@ -409,6 +410,35 @@
   2. Clinical page `/clinical` computes and displays standard AGP report: TIR bar with 5 zones, GMI, $CV$, and 24-hour percentile curve.
   3. Doctor consultation notes can be authored, saved to MongoDB, and retrieved per patient.
   4. 0 emojis across all new frontend files; all test suites pass; Next.js build exits code 0.
+
+### `TASK-E2E-01`: Full System Integration, Verification & Multi-Module End-to-End Demonstration Protocol
+- **Module:** E2E (System Hardening & Demonstration)
+- **Status:** **`READY`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M8-FULL`
+- **Architectural Reference:** `ADR-001` through `ADR-012`
+- **Description:**  
+  Execute full monorepo end-to-end integration and create a unified launch script / documentation guide for live demonstration:
+  1. **Comprehensive Demonstration Script & Run Orchestrator:**
+     - Create an automated startup script `scripts/demo_runner.js` or root npm script (`npm run demo` / `npm run dev:all`) that checks MongoDB connection, launches Express API on port 5000, Python AI Engine on port 8000, and Next.js Frontend on port 3000.
+  2. **E2E Integration Health Verification (`apps/api/tests/e2e.test.js`):**
+     - Full automated scenario walk-through test:
+       * Persona VP-03 telemetry stream initialization.
+       * Meal ingestion trigger with AI spike forecast.
+       * Workout logging with hypoglycemia lockout validation.
+       * Hypoglycemia event injection with emergency alert modal escalation (Stage 1 -> Stage 2 -> Stage 3).
+       * Remote caregiver acknowledgment from Caregiver Portal.
+       * Doctor AGP clinical profile compilation and clinical note entry.
+  3. **Documentation & User Guide Updates:**
+     - Update `README.md` with:
+       * Complete module feature matrix (M1 through M8).
+       * Exact steps to start and test the full application.
+       * All interactive routes (`/`, `/simulation`, `/diet`, `/workout`, `/emergency`, `/caregiver`, `/clinical`).
+       * Clinical safety disclaimers and educational boundaries.
+- **Acceptance Criteria:**
+  1. Full test suite executes cleanly with 0 failures across all 3 stacks (Python, Node API, Next.js Web).
+  2. `README.md` reflects complete documentation of all 8 modules.
+  3. Next.js production build exits code 0 with all 11 static routes operational.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)

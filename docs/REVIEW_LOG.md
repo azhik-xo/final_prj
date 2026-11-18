@@ -608,3 +608,68 @@ This log tracks all formal code and architectural reviews conducted by the **Sup
 - `TASK-M8-FULL` (Caregiver and Doctor Portal: Role-Based Access Control, Caregiver Patient Monitoring Roster & Doctor AGP Clinical Report)
 
 ---
+
+### REV-010: Caregiver and Doctor Portal: Multi-Role Oversight, Patient Roster & Ambulatory Glucose Profile (AGP) Report
+- **TASK ID:** `TASK-M8-FULL`
+- **MODULE:** M8 (Caregiver & Doctor Clinical Portal)
+- **DATE:** 2026-11-18
+- **REVIEW STATUS:** **APPROVED**
+
+**Requirements checked:**
+- [x] Backend Clinical & Caregiver Oversight service mounted at `/api/v1/clinical`:
+  * `GET /patients`: returns all 6 personas (VP-01 through VP-06) with real-time simulated metrics, risk tiers, and active alert state
+  * `GET /agp/:patientId`: computes international consensus standard AGP metrics (TIR 5 tiers, CV, GMI est. HbA1c, 24-hr percentile modal curves)
+  * `POST /caregiver/acknowledge`: remote caregiver acknowledgment for dependent emergency alerts
+  * `POST /notes` & `GET /notes/:patientId`: consultation notes authoring and retrieval
+- [x] Mongoose `ClinicalNote` schema with strict safety validator automatically rejecting pharmaceutical prescriptions or insulin titration plans per ADR-007
+- [x] Next.js Caregiver Portal route (`/caregiver`) with multi-patient live grid, urgent escalation cards with 1-click remote acknowledgment, risk tier filtering, and emergency protocol summary
+- [x] Next.js Doctor / Clinical AGP Portal route (`/clinical`) with patient selector, AGP summary KPI cards, 5-tier TIR horizontal stacked meter with ADA benchmark comparisons, 24-hour percentile curve chart (median line, IQR 25th-75th shading, 10th-90th outer range), modal day heatmap, and physician consultation notes logger
+- [x] Global navigation header updated with direct links to "Caregiver Portal" and "Doctor AGP"
+- [x] Strict zero-emoji policy enforced across all source files; exclusively Lucide React library icons used
+- [x] Mandatory clinical non-device disclaimers prominently displayed across all views and API payloads
+- [x] Automated test suites passing 100% across all services (62 Node backend tests + 52 Jest frontend tests + 31 Pytest tests)
+- [x] Next.js production build exits code 0 with clean static compilation (`11/11` pages)
+
+**Files reviewed:**
+- `apps/api/src/models/clinicalNote.model.js`
+- `apps/api/src/controllers/clinical.controller.js`
+- `apps/api/src/routes/clinical.routes.js`
+- `apps/api/src/app.js`
+- `apps/api/tests/clinical.test.js`
+- `apps/web/src/app/caregiver/page.js`
+- `apps/web/src/app/clinical/page.js`
+- `apps/web/src/app/layout.js`
+- `apps/web/tests/clinical.test.js`
+- `docs/DECISIONS.md` (ADR-012)
+- `docs/TASKS.md` (TASK-M8-FULL)
+
+**Tests executed:**
+- `npm.cmd test --prefix apps/api`: 62 passed, 0 failed in 2.09s.
+- `npm.cmd test --prefix apps/web`: 52 passed, 0 failed in 8.03s.
+- `pytest services/ai-engine/tests`: 31 passed, 0 failed in 6.72s.
+- `npm.cmd run build --prefix apps/web`: Compiled successfully; static routes `/caregiver` (5.84 kB) and `/clinical` (7.74 kB) generated cleanly (`11/11` total routes).
+- Emoji check: Zero Unicode emojis found across all source files (`apps/web/src`).
+
+**Findings:**
+- The statistical AGP engine adheres strictly to the International Consensus on Ambulatory Glucose Profile reporting (Battelino et al., Diabetes Care 2019).
+- The 5-tier Time-in-Range meter provides immediate visual alignment against clinical targets (>70% TIR, <4% Low, <1% Very Low).
+- The Mongoose model schema enforces strict clinical safety by rejecting specific insulin units or drug titration guidance.
+- The Caregiver Portal allows rapid remote oversight and acknowledgment of emergency alerts without physical device access.
+- The UI follows clinical SaaS aesthetic guidelines with clean typography, responsive layout, and zero emojis.
+
+**Security concerns:**
+- None. Strict payload validation and regex-based prescription safety interceptors prevent unauthorized clinical advice.
+
+**Missing functionality:**
+- None. All acceptance criteria fully met.
+
+**Required corrections:**
+- None.
+
+**Final decision:**
+- `TASK-M8-FULL` is formally **APPROVED**.
+
+**Next recommended task:**
+- `TASK-E2E-01` (End-to-End System Integration, Verification & Final Project Demonstration Review)
+
+---
