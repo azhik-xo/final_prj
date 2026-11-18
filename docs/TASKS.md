@@ -28,7 +28,8 @@
 | **`TASK-M3-VOICE-TA`** | **M3** | Senior Voice Localization: Optional Tamil Voice Readout (தமிழ் குரல்) & Bilingual TTS Engine | `TASK-M3-SENIOR` | **APPROVED** | Developer AI |
 | **`TASK-M3-VOICE-FIX`** | **M3** | Resilient Multi-Tier Tamil TTS Engine: Asynchronous Voice Hydration & Phonetic Fallback | `TASK-M3-VOICE-TA` | **APPROVED** | Developer AI |
 | **`TASK-M5-FULL`** | **M5** | AI Diet Planner: Macronutrient Logging, Glycemic Impact Prediction & Nutritional Swaps | `TASK-M4-FULL` | **APPROVED** | Developer AI |
-| **`TASK-M6-FULL`** | **M6** | AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine | `TASK-M5-FULL` | **IN_REVIEW** | Developer AI |
+| **`TASK-M6-FULL`** | **M6** | AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine | `TASK-M5-FULL` | **APPROVED** | Developer AI |
+| **`TASK-M7-FULL`** | **M7** | Emergency Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch | `TASK-M6-FULL` | **READY** | Developer AI |
 | **`TASK-M0-01`** | **M0** | Monorepo Workspace Initialization & Tooling Setup | None | **APPROVED** | Developer AI |
 | **`TASK-M0-02`** | **M0** | Base Docker & Environment Orchestration Setup | `TASK-M0-01` | **BACKLOG** | Developer AI |
 | **`TASK-M1-01`** | **M1** | Virtual CGM Simulator Engine with 6 Personas & Event Injection | None | **APPROVED** | Developer AI |
@@ -229,7 +230,7 @@
 
 ### `TASK-M6-FULL`: AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine
 - **Module:** M6 (AI Workout Planner)
-- **Status:** **`IN_REVIEW`**
+- **Status:** **`APPROVED`**
 - **Assignee:** Developer AI
 - **Dependencies:** `TASK-M5-FULL`
 - **Architectural Reference:** `ADR-007`, `ADR-010`
@@ -280,6 +281,83 @@
   3. Safe workouts calculate physiologically bounded drawdowns ($-120$ to $0$ mg/dL).
   4. Logging a workout successfully persists to MongoDB and bridges to `SimulatorEngine` if active.
   5. UI is 100% free of emojis and all unit/integration tests pass across all services.
+
+### `TASK-M7-FULL`: Emergency Detection and Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch
+- **Module:** M7 (Emergency Response Engine)
+- **Status:** **`READY`**
+- **Assignee:** Developer AI
+- **Dependencies:** `TASK-M6-FULL`
+- **Architectural Reference:** `ADR-006`, `ADR-007`, `ADR-011`
+- **Description:**  
+  Develop the complete end-to-end intelligent emergency detection and multi-stage escalation workflow across the monorepo:
+  1. **Backend Alert Rules Engine (`apps/api/src/modules/alerts/alertEngine.js`):**
+     - Real-time evaluation on every incoming CGM reading or manual injection:
+       * **CRITICAL_HYPO:** Glucose $<54$ mg/dL OR ($<70$ mg/dL with velocity $dG/dt < -2.5$ mg/dL/min). Severity: `CRITICAL`.
+       * **WARNING_HYPO:** Glucose $54–69$ mg/dL. Severity: `WARNING`.
+       * **CRITICAL_HYPER:** Glucose $>300$ mg/dL. Severity: `CRITICAL`.
+       * **WARNING_HYPER:** Glucose $250–300$ mg/dL. Severity: `WARNING`.
+     - Smart Alert Suppression / Cooldown:
+       * 15-minute cooldown per severity tier to prevent notification flooding, with immediate override if severity increases (e.g. WARNING $\rightarrow$ CRITICAL).
+     - State machine lifecycle:
+       `TRIGGERED` $\rightarrow$ `STAGE_1_PATIENT_COUNTDOWN` $\rightarrow$ (`ACKNOWLEDGED` OR `STAGE_2_CAREGIVER_ESCALATED` $\rightarrow$ `STAGE_3_SOS_DISPATCHED`).
+  2. **Express Endpoints & Persistence (`apps/api`):**
+     - Mongoose Schema `apps/api/src/models/alert.model.js`:
+       * Fields: `userId`, `deviceId`, `glucose`, `rateOfChange`, `alertType`, `severity`, `status` (`triggered`, `acknowledged`, `caregiver_escalated`, `sos_dispatched`, `resolved`), `acknowledgedBy`, `acknowledgedAt`, `countdownSeconds` (default 60), `caregiverNotified`: Boolean, `simulatedSos`: { `dispatched`: Boolean, `etaMinutes`: Number, `coords`: { `lat`: Number, `lng`: Number }, `dispatchedAt`: Date }, `source: "simulation"`, `timestamp`.
+     - Controller & Routes in `apps/api/src/routes/alert.routes.js` mounted at `/api/v1/alerts`:
+       * `GET /api/v1/alerts/active`: Returns currently unacknowledged / active emergency alert.
+       * `POST /api/v1/alerts/acknowledge`: Patient or caregiver acknowledgment (`{ alertId, actionTaken: "fast_carbs" | "safe" }`).
+       * `POST /api/v1/alerts/escalate-caregiver`: Advances stage to Stage 2 (caregiver notification).
+       * `POST /api/v1/alerts/dispatch-sos`: Simulates Stage 3 EMS ambulance dispatch with mock GPS coordinates and ETA tracking.
+       * `GET /api/v1/alerts/history`: Chronological audit log of past emergency events.
+     - Socket.IO Real-Time Dispatch:
+       * Emits `cgm:alert` on critical breach.
+       * Emits `cgm:alert_acknowledged` on user resolution.
+       * Emits `cgm:sos_status` on stage progression.
+  3. **Next.js Web UI Components & Emergency Route (`apps/web`):**
+     - **Global Emergency Alert Modal (`apps/web/src/components/EmergencyAlertModal.jsx`):**
+       * Mounted at root layout (`apps/web/src/app/layout.js`) or patient dashboard, actively listening for `cgm:alert`.
+       * High-contrast pulsing emergency siren modal (red backdrop for Critical Hypo, amber for Hyper).
+       * 60-second animated circular/linear countdown timer.
+       * One-click "I AM SAFE / ACKNOWLEDGE" primary button.
+       * Fast-action guidance: "Consume 15g fast-acting carbs (fruit juice, glucose tabs). Recheck in 15 min."
+       * Optional sound toggle (Web Audio API synthetic pulse tone or audible alert chime) with mute button.
+       * When countdown hits 0: Automatically transitions to Stage 2 Caregiver SOS + Stage 3 Simulated Dispatch!
+     - **Dedicated Emergency Hub Page (`apps/web/src/app/emergency/page.js`):**
+       * Top navigation link "Emergency Hub" in `apps/web/src/app/layout.js`.
+       * Live Emergency Status Card: Active alert details or "All Systems Normal" green banner.
+       * Multi-Stage Escalation Visualizer:
+         - Stage 1: Patient Notification (Timer & Acknowledge status).
+         - Stage 2: Caregiver Alert (Simulated SMS / Push notification sent to caregiver contact).
+         - Stage 3: Simulated Ambulance & EMS Dispatch Card with simulated real-time GPS tracking (simulated coordinates `13.0827, 80.2707`), simulated vehicle ID, and live ETA countdown.
+       * One-touch Emergency Simulator Triggers:
+         - "Simulate Severe Hypo Emergency (<54 mg/dL)"
+         - "Simulate Precipitous Drop (-3.2 mg/dL/min)"
+         - "Simulate Hyperglycemic Crisis (>300 mg/dL)"
+       * Emergency Protocol & "Rule of 15" Educational Cheatsheet.
+       * Emergency Contacts Roster (Simulated primary caregiver, endocrinologist, dispatch center).
+       * Emergency Incident History Log.
+  4. **Strict Rules & Safety Protocol (ADR-007, ADR-011, AGENTS.md):**
+     - STRICTLY ZERO EMOJIS in code or UI! Exclusively Lucide React icons (`Siren`, `ShieldAlert`, `PhoneCall`, `Ambulance`, `CheckCircle2`, `Clock`, `MapPin`, `Activity`, `Volume2`, `VolumeX`, `AlertTriangle`, `HeartPulse`).
+     - MANDATORY `"source": "simulation"` on all alerts, payloads, and mock SOS data.
+     - 100% SIMULATED DISPATCH: Prominent banner stating: "SIMULATION ONLY: No actual emergency services (911/112) are contacted."
+     - Unacknowledged emergency is labeled "Unacknowledged Emergency Simulation", never clinical confirmation of unconsciousness.
+  5. **Verification & Tests:**
+     - Node backend tests in `apps/api/tests/alert.test.js`:
+       * Alert rules evaluation (<54 mg/dL triggers critical alert, 15-min cooldown suppresses duplicate, stage escalation).
+       * Acknowledge endpoint cancels alert and resets status.
+       * Simulated SOS dispatch generates valid coordinates and ETA.
+     - Jest web component tests in `apps/web/tests/emergency.test.js`:
+       * Modal renders on critical alert and counts down.
+       * Clicking acknowledge cancels alert.
+       * Zero emojis verified via regex audit.
+     - Next.js production build exits code 0 (`9/9` static routes).
+- **Acceptance Criteria:**
+  1. CGM readings with glucose $<54$ mg/dL or $dG/dt < -2.5$ mg/dL/min trigger CRITICAL alert emitted over Socket.IO within 100ms.
+  2. Emergency Modal pops up on Patient Dashboard and Emergency Hub with 60-second countdown.
+  3. Patient can click "I Am Safe / Acknowledge" to disarm alert, update database status, and stop countdown.
+  4. Expiry of countdown triggers simulated Caregiver Alert and simulated Ambulance SOS dispatch with simulated GPS map tracking.
+  5. Emergency Hub route `/emergency` provides manual trigger testing, live escalation tracking, and incident history.
+  6. Zero emojis across all new frontend files; all test suites pass.
 
 ### `TASK-M4-FULL`: AI Intelligence Engine: Trend Analytics, Short-Term Forecasting (15/30/45m) & Anomaly Detection
 - **Module:** M4 (AI Intelligence Engine)

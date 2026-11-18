@@ -466,3 +466,72 @@ This log tracks all formal code and architectural reviews conducted by the **Sup
 
 ---
 
+
+### REV-008: AI Workout Planner: Activity Logging, Glycemic Safety Interlocks & Drawdown Engine
+- **TASK ID:** `TASK-M6-FULL`
+- **MODULE:** M6 (AI Workout Planner)
+- **DATE:** 2026-11-18
+- **REVIEW STATUS:** **APPROVED**
+
+**Requirements checked:**
+- [x] Reference physical activity catalog with metabolic equivalent of task (MET) values (Brisk Walking, Running/Jogging, Cycling, Swimming, Resistance Training, Gentle Yoga) in Python AI Engine
+- [x] Deterministic physiological safety interlocks:
+  * Hypoglycemia Lockout: Glucose $<90$ mg/dL or $dG/dt < -1.5$ mg/dL/min triggers `"locked_hypo"`, prohibiting strenuous exercise and prescribing 15g fast carbs
+  * Hyperglycemia / Ketosis Warning: Glucose $>250$ mg/dL triggers `"caution_hyper"`, locking out high-intensity anaerobic workouts and recommending hydration and gentle walking
+  * Safe Training Window: Glucose between $90–250$ mg/dL triggers `"safe"` status
+- [x] Physiological glucose drawdown model bounded within $[-120, 0]$ mg/dL:
+  $$\Delta G_{\text{drawdown}} = -1.0 \times \text{Duration} \times \text{IntensityFactor} \times (\text{MET} / 3.5)$$
+  with 2-hour kinetic nadir and recovery projection curve
+- [x] RESTful API endpoints mounted at `/api/v1/activity/logs`, `/api/v1/activity/safety-check`, `/api/v1/activity/activities`, and `/api/v1/activity/recommendations`
+- [x] Mongoose `Activity` schema with compound index `{ userId: 1, timestamp: -1 }` and mandatory `"source": "simulation"`
+- [x] Closed-loop simulation bridge: logging a workout triggers a live `exercise` event on the active Virtual CGM Simulator and broadcasts via Socket.IO
+- [x] Next.js frontend route `/workout` with 1-click workout presets, dynamic safety interlock hero banner, duration/intensity slider with live drawdown preview, interactive SVG 2-hour kinetic recovery curve, and recent workout activity logs
+- [x] Strict zero-emoji policy enforced across all source files; exclusively Lucide React library icons used
+- [x] Mandatory clinical non-prescription disclaimers per ADR-007 and ADR-010 prominently displayed
+- [x] Automated test suites passing 100% across all services (31 Pytest tests + 42 Node backend tests + 33 Jest frontend tests)
+- [x] Next.js production build exits code 0 with clean static compilation (`8/8` pages)
+
+**Files reviewed:**
+- `services/ai-engine/models/workout_advisor.py`
+- `services/ai-engine/routes/workout_routes.py`
+- `services/ai-engine/tests/test_workout_engine.py`
+- `services/ai-engine/main.py`
+- `apps/api/src/models/activity.model.js`
+- `apps/api/src/controllers/activity.controller.js`
+- `apps/api/src/routes/activity.routes.js`
+- `apps/api/tests/activity.test.js`
+- `apps/web/src/app/layout.js`
+- `apps/web/src/app/workout/page.js`
+- `apps/web/tests/workout.test.js`
+- `docs/DECISIONS.md` (ADR-010)
+- `docs/TASKS.md` (TASK-M6-FULL)
+
+**Tests executed:**
+- `pytest services/ai-engine/tests`: 31 passed, 0 failed in 2.86s.
+- `npm.cmd test --prefix apps/api`: 42 passed, 0 failed in 1.42s.
+- `npm.cmd test --prefix apps/web`: 33 passed, 0 failed in 4.77s.
+- `npm.cmd run build --prefix apps/web`: Compiled successfully; static route `/workout` generated at 10.9 kB (`8/8` total routes).
+- Emoji check: Zero Unicode emojis found across all source files (`apps/web/src`).
+
+**Findings:**
+- The safety interlocks correctly enforce the clinical guidelines of the American Diabetes Association (ADA) regarding exercise and hypoglycemia.
+- The 2-hour kinetic curve model reflects physiological recovery and hepatic gluconeogenesis post-exercise.
+- The live simulation bridge successfully injects simulated exercise events, immediately affecting the running glucose trajectory on the patient dashboard.
+- The UI adheres to clinical SaaS standards with high contrast and zero emojis.
+
+**Security concerns:**
+- None. Strict schema validations prevent malformed input; simulation boundaries prevent clinical misinterpretation.
+
+**Missing functionality:**
+- None. All acceptance criteria fully satisfied.
+
+**Required corrections:**
+- None.
+
+**Final decision:**
+- `TASK-M6-FULL` is formally **APPROVED**.
+
+**Next recommended task:**
+- `TASK-M7-FULL` (Emergency Detection and Response Engine: Critical Threshold Alerting, Multi-Stage Escalation & Simulated SOS Dispatch)
+
+---

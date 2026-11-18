@@ -16,6 +16,7 @@ This document formalizes the key architectural, technical, and safety decisions 
 - [ADR-008: Senior & Geriatric Accessibility UX Protocol](#adr-008-senior--geriatric-accessibility-ux-protocol)
 - [ADR-009: Nutritional Glycemic Impact Modeling and Diet Planning Safety Protocol](#adr-009-nutritional-glycemic-impact-modeling-and-diet-planning-safety-protocol)
 - [ADR-010: Physical Activity Glycemic Modeling & Clinical Safety Interlocks Protocol](#adr-010-physical-activity-glycemic-modeling--clinical-safety-interlocks-protocol)
+- [ADR-011: Emergency Detection, Multi-Stage Escalation Protocol & Simulated SOS Dispatch](#adr-011-emergency-detection-multi-stage-escalation-protocol--simulated-sos-dispatch)
 
 ---
 
@@ -195,3 +196,32 @@ This document formalizes the key architectural, technical, and safety decisions 
   *Pros:* Enforces real-world clinical safety guidelines (ADA standards of care for exercise) and prevents simulation of dangerous diabetic behaviors.  
   *Cons:* Strict lockouts prevent users from logging hypothetical workouts during simulated lows without overriding.
 
+
+---
+
+### ADR-011: Emergency Detection, Multi-Stage Escalation Protocol & Simulated SOS Dispatch
+- **Status:** **APPROVED**
+- **Date:** 2026-11-18
+- **Context:**  
+  Module M7 (Emergency Response Engine) handles life-threatening glycemic excursions: severe hypoglycemia ($<54$ mg/dL), acute precipitous drops ($dG/dt < -2.5$ mg/dL/min), and severe hyperglycemia ($>300$ mg/dL). Rapid escalation is required when a patient fails to respond, while preventing panic or real-world emergency service misdirection.
+- **Decision:**  
+  1. *Clinical Severity Classification:*  
+     - **CRITICAL HYPO:** Glucose $<54$ mg/dL or ($<70$ mg/dL with $dG/dt < -2.5$ mg/dL/min). Immediate Tier 1 escalation.
+     - **WARNING HYPO:** Glucose $54–69$ mg/dL.
+     - **CRITICAL HYPER:** Glucose $>300$ mg/dL.
+     - **WARNING HYPER:** Glucose $250–300$ mg/dL.
+  2. *Three-Tier Deterministic Escalation Protocol:*  
+     - **Stage 1 (Patient Alarm & 60s Countdown):** Immediate high-contrast visual flashing alert with audible siren toggle and 60-second countdown modal ("I Am Safe / Acknowledge").
+     - **Stage 2 (Caregiver SOS Notification):** If the 60-second countdown reaches 0 without acknowledgment, or if glucose drops below $50$ mg/dL, escalate to caregiver notification over Socket.IO and simulated SMS/Push notification.
+     - **Stage 3 (Simulated EMS / Ambulance SOS Dispatch):** If unacknowledged, launch simulated emergency services dispatch with real-time tracking, simulated ambulance ETA, and location coordinates.
+  3. *Strict Non-Device & Healthcare Simulation Safeguards:*  
+     - Mandatory `"source": "simulation"` on all alerts, logs, and UI modals.
+     - 100% simulated dispatch: No real emergency services (911/112) or actual telecom gateways are contacted.
+     - Unacknowledged status is explicitly labeled as "Unacknowledged Emergency Simulation", never clinical confirmation of unconsciousness.
+  4. *Alert Cooldown & Suppression:*  
+     - 15-minute suppression window for alerts of the same severity level to prevent notification flooding, with immediate override if clinical severity worsens.
+  5. *UI Design Standards:*  
+     - Strict zero-emoji policy; exclusively Lucide React icons (`Siren`, `ShieldAlert`, `PhoneCall`, `Ambulance`, `CheckCircle2`, `Clock`, `MapPin`, `Volume2`, `VolumeX`).
+- **Trade-offs:**  
+  *Pros:* Realistic, high-impact demonstration of clinical closed-loop emergency response without safety liabilities.  
+  *Cons:* Requires simulated caregiver and ambulance dispatch mock state.
