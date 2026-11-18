@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test src/simulator/tests/simulator.test.js tests/health.test.js tests/integration.test.js tests/diet.test.js tests/activity.test.js",
+    "test": "node --test src/simulator/tests/simulator.test.js tests/health.test.js tests/integration.test.js tests/diet.test.js tests/activity.test.js tests/alert.test.js",
     "test:simulator": "node --test src/simulator/tests/simulator.test.js",
     "simulate": "node src/simulator/runner.js",
     "simulate:hypo": "node src/simulator/runner.js --persona VP-03 --event hypo_drop",

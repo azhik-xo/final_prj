@@ -16,6 +16,7 @@ import MetricCards from '../components/MetricCards';
 import GlucoseChart from '../components/GlucoseChart';
 import AIPredictionCard from '../components/AIPredictionCard';
 import SeniorGlucoseView from '../components/SeniorGlucoseView';
+import EmergencyAlertModal from '../components/EmergencyAlertModal';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
@@ -30,6 +31,7 @@ export default function PatientDashboard() {
   const [socketConnected, setSocketConnected] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
   const [viewMode, setViewMode] = useState('clinical'); // 'clinical' | 'senior'
+  const [activeEmergencyAlert, setActiveEmergencyAlert] = useState(null);
 
   const socketRef = useRef(null);
 
@@ -105,6 +107,15 @@ export default function PatientDashboard() {
             setAiPrediction(predData.data);
           }
         }
+
+        // 5. Fetch active emergency alert if present
+        const alertRes = await fetch(`${API_BASE}/api/v1/alerts/active?userId=usr_patient_03`);
+        if (alertRes.ok) {
+          const alertData = await alertRes.json();
+          if (isMounted && alertData.hasActiveAlert && alertData.data) {
+            setActiveEmergencyAlert(alertData.data);
+          }
+        }
       } catch (err) {
         console.warn('[Dashboard] API Gateway connection deferred:', err.message);
       }
@@ -163,6 +174,15 @@ export default function PatientDashboard() {
     socket.on('cgm:event', (eventData) => {
       const eventName = (eventData.activeEvent || 'Normal').replace('_', ' ').toUpperCase();
       showFeedback(`Metabolic event updated: ${eventName}`, 'info');
+    });
+
+    // Ingest emergency breach alerts (Module M7)
+    socket.on('cgm:alert', (alertData) => {
+      setActiveEmergencyAlert(alertData);
+    });
+
+    socket.on('cgm:alert_acknowledged', () => {
+      setActiveEmergencyAlert(null);
     });
 
     return () => {
@@ -323,6 +343,15 @@ export default function PatientDashboard() {
           GlucoGuard is developed strictly as an educational and engineering simulation prototype. Readings displayed on this interface are synthetic simulation values generated for computational modeling and algorithmic demonstration. This software must not be used to direct medical care, administer insulin or pharmacological therapy, or replace licensed physician oversight.
         </p>
       </div>
+
+      {/* Real-time Emergency Alert Modal (Module M7) */}
+      {activeEmergencyAlert && (
+        <EmergencyAlertModal
+          alert={activeEmergencyAlert}
+          onAcknowledge={() => setActiveEmergencyAlert(null)}
+          onDismiss={() => setActiveEmergencyAlert(null)}
+        />
+      )}
     </div>
   );
 }

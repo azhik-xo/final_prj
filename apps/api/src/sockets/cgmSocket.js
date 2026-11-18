@@ -1,5 +1,7 @@
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 const aiService = require('../services/ai.service');
+const { alertEngine } = require('../modules/alerts/alertEngine');
 
 let ioInstance = null;
 const rollingReadings = [];
@@ -25,6 +27,24 @@ function broadcastEvent(eventData) {
 function broadcastPrediction(prediction) {
   if (ioInstance) {
     ioInstance.emit('cgm:prediction', prediction);
+  }
+}
+
+function broadcastAlert(alert) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:alert', alert);
+  }
+}
+
+function broadcastAlertAcknowledged(alert) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:alert_acknowledged', alert);
+  }
+}
+
+function broadcastSosStatus(sosData) {
+  if (ioInstance) {
+    ioInstance.emit('cgm:sos_status', sosData);
   }
 }
 
@@ -124,6 +144,22 @@ module.exports = {
     rollingReadings.push(reading);
     if (rollingReadings.length > 30) rollingReadings.shift();
 
+    // Clinical Alert Rules Evaluation (Module M7)
+    try {
+      const alert = alertEngine.evaluateReading(reading);
+      if (alert) {
+        broadcastAlert(alert);
+        if (mongoose.connection.readyState === 1) {
+          const Alert = require('../models/alert.model');
+          Alert.create(alert).catch((dbErr) => {
+            console.warn('[Socket] Failed to persist alert to MongoDB:', dbErr.message);
+          });
+        }
+      }
+    } catch (alertErr) {
+      console.warn('[Socket] Alert evaluation error:', alertErr.message);
+    }
+
     // Generate and broadcast AI predictions
     aiService.getPrediction(rollingReadings, [15, 30, 45], reading.persona || 'VP-01')
       .then((pred) => {
@@ -135,5 +171,8 @@ module.exports = {
   },
   broadcastStatus,
   broadcastEvent,
-  broadcastPrediction
+  broadcastPrediction,
+  broadcastAlert,
+  broadcastAlertAcknowledged,
+  broadcastSosStatus
 };
